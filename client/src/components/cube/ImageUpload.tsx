@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Progress } from "../ui/progress";
 import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
 
@@ -66,66 +63,75 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
   const allImagesUploaded = Object.keys(faceImages).length === CUBE_FACES.length;
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Capture Your Cube Faces
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-            Upload or capture images of all 6 faces of your Rubik's Cube
-          </p>
-          
-          <div className="max-w-md mx-auto mb-4">
-            <Progress value={progress} className="h-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              {Object.keys(faceImages).length} of {CUBE_FACES.length} faces captured
+    <div className="min-h-screen relative">
+      {/* Hero Overlay */}
+      <div className="absolute inset-0 bg-hero-overlay pointer-events-none"></div>
+      
+      <div className="relative z-10 min-h-screen px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 pt-8">
+            <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
+              Capture Your Cube
+            </h1>
+            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
+              Upload or capture images of all 6 faces of your Rubik's Cube
             </p>
-          </div>
-        </div>
-
-        {/* Face Selection Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {CUBE_FACES.map((face, index) => (
-            <Button
-              key={face.id}
-              onClick={() => setCurrentFace(index)}
-              variant={currentFace === index ? "default" : "outline"}
-              size="sm"
-              className="relative"
-            >
-              <div className={`w-3 h-3 ${face.color} rounded-sm mr-2`}></div>
-              {face.name}
-              {faceImages[face.id as keyof typeof faceImages] && (
-                <Check className="w-4 h-4 ml-1 text-green-500" />
-              )}
-            </Button>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Upload Area */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className={`w-4 h-4 ${CUBE_FACES[currentFace].color} rounded-sm`}></div>
-                <span>{CUBE_FACES[currentFace].name} Face</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center space-x-2 mb-2">
-                  <RotateCw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span className="font-medium text-blue-800 dark:text-blue-200">Orientation Guide:</span>
+            
+            <div className="max-w-md mx-auto mb-6">
+              <div className="glass-panel p-4">
+                <div className="w-full bg-white-10 rounded-full h-3 mb-3">
+                  <div 
+                    className="bg-coral h-3 rounded-full transition-all duration-500" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="text-sm text-white-80">
+                  {Object.keys(faceImages).length} of {CUBE_FACES.length} faces captured
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Face Selection Tabs */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {CUBE_FACES.map((face, index) => (
+              <button
+                key={face.id}
+                onClick={() => setCurrentFace(index)}
+                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth ${
+                  currentFace === index ? 'bg-orchid/20 border-orchid/30' : 'hover:bg-white-10'
+                }`}
+              >
+                <div className={`w-4 h-4 ${face.color} rounded-sm`}></div>
+                <span className="text-white font-medium">{face.name}</span>
+                {faceImages[face.id as keyof typeof faceImages] && (
+                  <Check className="w-4 h-4 text-orchid" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Upload Area */}
+            <div className="glass-panel p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className={`w-6 h-6 ${CUBE_FACES[currentFace].color} rounded-lg`}></div>
+                <h2 className="text-2xl font-bold text-white">{CUBE_FACES[currentFace].name} Face</h2>
+              </div>
+
+              <div className="mb-6 p-4 bg-steel/20 rounded-2xl border border-steel/30">
+                <div className="flex items-center space-x-2 mb-2">
+                  <RotateCw className="w-5 h-5 text-orchid" />
+                  <span className="font-semibold text-white">Orientation Guide:</span>
+                </div>
+                <p className="text-sm text-white-80">
                   {CUBE_FACES[currentFace].instruction}
                 </p>
               </div>
 
               <div
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-white-20 rounded-2xl p-8 text-center hover:border-orchid/50 transition-smooth cursor-pointer bg-white-10/50"
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => document.getElementById(`file-input-${currentFace}`)?.click()}
@@ -135,24 +141,24 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                     <img
                       src={faceImages[CUBE_FACES[currentFace].id as keyof typeof faceImages]}
                       alt={`${CUBE_FACES[currentFace].name} face`}
-                      className="w-32 h-32 object-cover rounded-lg mx-auto shadow-md"
+                      className="w-32 h-32 object-cover rounded-2xl mx-auto shadow-glass"
                     />
-                    <div className="flex items-center justify-center space-x-2 text-green-600 dark:text-green-400">
+                    <div className="flex items-center justify-center space-x-2 text-orchid">
                       <Check className="w-5 h-5" />
                       <span className="font-medium">Image uploaded successfully</span>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-white-80">
                       Click to replace image
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Upload className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto" />
+                    <Upload className="w-16 h-16 text-white-80 mx-auto" />
                     <div>
-                      <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <p className="text-lg font-medium text-white mb-2">
                         Upload {CUBE_FACES[currentFace].name} Face Image
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-white-80">
                         Drag and drop or click to select
                       </p>
                     </div>
@@ -168,18 +174,16 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                 />
               </div>
 
-              <div className="mt-4 flex space-x-2">
-                <Button
+              <div className="mt-6 flex space-x-3">
+                <button
                   onClick={() => document.getElementById(`file-input-${currentFace}`)?.click()}
-                  variant="outline"
-                  className="flex-1"
+                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2"
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Choose File
-                </Button>
-                <Button
+                  <Upload className="w-5 h-5" />
+                  <span>Choose File</span>
+                </button>
+                <button
                   onClick={() => {
-                    // Trigger camera input
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = 'image/*';
@@ -200,27 +204,22 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                     };
                     input.click();
                   }}
-                  variant="outline"
-                  className="flex-1"
+                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2"
                 >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo
-                </Button>
+                  <Camera className="w-5 h-5" />
+                  <span>Take Photo</span>
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Preview Grid */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Uploaded Faces</CardTitle>
-            </CardHeader>
-            <CardContent>
+            {/* Preview Grid */}
+            <div className="glass-panel p-6">
+              <h3 className="text-2xl font-bold text-white mb-6">Uploaded Faces</h3>
               <div className="grid grid-cols-3 gap-4">
                 {CUBE_FACES.map((face) => (
                   <div
                     key={face.id}
-                    className="aspect-square border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 flex items-center justify-center"
+                    className="aspect-square border-2 border-white-20 rounded-2xl overflow-hidden bg-white-10/50 flex items-center justify-center"
                   >
                     {faceImages[face.id as keyof typeof faceImages] ? (
                       <img
@@ -231,31 +230,34 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                     ) : (
                       <div className="text-center">
                         <div className={`w-8 h-8 ${face.color} rounded-sm mx-auto mb-2 opacity-50`}></div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{face.name}</p>
+                        <p className="text-xs text-white-80">{face.name}</p>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <Button onClick={onBack} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          
-          <Button 
-            onClick={onNext} 
-            disabled={!allImagesUploaded}
-            className="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 hover:from-red-600 hover:via-green-600 hover:to-blue-600 text-white border-0"
-          >
-            Process Images
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          {/* Navigation */}
+          <div className="flex justify-between mt-12">
+            <button 
+              onClick={onBack} 
+              className="btn-outline px-6 py-3 flex items-center space-x-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            
+            <button 
+              onClick={onNext} 
+              disabled={!allImagesUploaded}
+              className={`btn-primary px-6 py-3 flex items-center space-x-2 ${!allImagesUploaded ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span>Process Images</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

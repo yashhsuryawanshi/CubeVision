@@ -8,12 +8,42 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     width: 100vw;
     height: 100vh;
+    background: linear-gradient(115deg, #2C3E57 0%, #3F567F 25%, #4B3B7A 55%, #412653 100%);
+    color: #FFFFFF;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply backdrop-blur-20 bg-white-20 border border-white-20 shadow-glass rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply bg-coral text-white shadow-soft-3d rounded-2xl duration-300 hover:shadow-xl;
+    transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  
+  .btn-outline {
+    @apply border border-white-80 bg-transparent text-white rounded-2xl duration-300 hover:bg-white-20 hover:text-white;
+    transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  
+  .transition-smooth {
+    transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  
+  .text-display {
+    @apply font-display font-extrabold tracking-tight text-white;
+  }
+  
+  .text-body {
+    @apply text-white-80 font-normal;
   }
 }
 

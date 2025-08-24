@@ -1,9 +1,7 @@
-import { Suspense, useState } from "react";
+import { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { ArrowLeft, RotateCcw, Save, Share, Maximize } from "lucide-react";
+import { ArrowLeft, Maximize, RotateCcw } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
 import * as THREE from "three";
 
@@ -11,204 +9,148 @@ interface CubeVisualizationProps {
   onBack: () => void;
 }
 
-// 3D Rubik's Cube Component
-function RubiksCube({ faceColors }: { faceColors: any }) {
-  const cubeSize = 1;
-  const gap = 0.05;
-  const smallCubeSize = (cubeSize - 2 * gap) / 3;
+// Component for individual cube face
+function CubeFace({ colors, position, rotation }: { colors: string[], position: [number, number, number], rotation: [number, number, number] }) {
+  const faceSize = 1;
+  const squareSize = faceSize / 3;
+  const offset = (faceSize - squareSize) / 2;
 
-  // Color mapping
-  const colorMap: Record<string, string> = {
-    white: '#ffffff',
-    yellow: '#ffff00',
-    red: '#ff0000',
-    orange: '#ff6600',
-    green: '#00ff00',
-    blue: '#0000ff',
+  const getColorHex = (color: string) => {
+    const colorMap: Record<string, string> = {
+      'white': '#ffffff',
+      'yellow': '#ffff00',
+      'red': '#ff0000',
+      'orange': '#ff8000',
+      'green': '#00ff00',
+      'blue': '#0000ff',
+    };
+    return colorMap[color] || '#888888';
   };
 
-  // Face mapping for 3D positioning
-  const getFaceColor = (x: number, y: number, z: number, face: string) => {
-    let index = 0;
-    if (face === 'front' && z === 1) {
-      index = (2 - y) * 3 + x;
-      return faceColors.front?.[index] || 'white';
-    }
-    if (face === 'back' && z === -1) {
-      index = (2 - y) * 3 + (2 - x);
-      return faceColors.back?.[index] || 'orange';
-    }
-    if (face === 'right' && x === 1) {
-      index = (2 - y) * 3 + (2 - z);
-      return faceColors.right?.[index] || 'blue';
-    }
-    if (face === 'left' && x === -1) {
-      index = (2 - y) * 3 + z;
-      return faceColors.left?.[index] || 'green';
-    }
-    if (face === 'top' && y === 1) {
-      index = (2 - z) * 3 + x;
-      return faceColors.top?.[index] || 'white';
-    }
-    if (face === 'bottom' && y === -1) {
-      index = z * 3 + x;
-      return faceColors.bottom?.[index] || 'yellow';
-    }
-    return 'gray';
-  };
-
-  const smallCubes = [];
-
-  for (let x = -1; x <= 1; x++) {
-    for (let y = -1; y <= 1; y++) {
-      for (let z = -1; z <= 1; z++) {
-        const position: [number, number, number] = [
-          x * (smallCubeSize + gap),
-          y * (smallCubeSize + gap),
-          z * (smallCubeSize + gap),
-        ];
-
-        // Determine visible faces and their colors
-        const materials = [];
+  return (
+    <group position={position} rotation={rotation}>
+      {colors.map((color, index) => {
+        const row = Math.floor(index / 3);
+        const col = index % 3;
+        const x = (col - 1) * squareSize;
+        const y = (1 - row) * squareSize;
         
-        // Right face (+X)
-        if (x === 1) {
-          const color = getFaceColor(x, y, z, 'right');
-          materials[0] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[0] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-        
-        // Left face (-X)
-        if (x === -1) {
-          const color = getFaceColor(x, y, z, 'left');
-          materials[1] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[1] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-        
-        // Top face (+Y)
-        if (y === 1) {
-          const color = getFaceColor(x, y, z, 'top');
-          materials[2] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[2] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-        
-        // Bottom face (-Y)
-        if (y === -1) {
-          const color = getFaceColor(x, y, z, 'bottom');
-          materials[3] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[3] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-        
-        // Front face (+Z)
-        if (z === 1) {
-          const color = getFaceColor(x, y, z, 'front');
-          materials[4] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[4] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-        
-        // Back face (-Z)
-        if (z === -1) {
-          const color = getFaceColor(x, y, z, 'back');
-          materials[5] = new THREE.MeshStandardMaterial({ color: colorMap[color] || color });
-        } else {
-          materials[5] = new THREE.MeshStandardMaterial({ color: '#111111' });
-        }
-
-        smallCubes.push(
-          <mesh key={`${x}-${y}-${z}`} position={position}>
-            <boxGeometry args={[smallCubeSize, smallCubeSize, smallCubeSize]} />
-            {materials.map((material, i) => (
-              <meshStandardMaterial key={i} attach={`material-${i}`} {...material} />
-            ))}
+        return (
+          <mesh key={index} position={[x, y, 0.01]}>
+            <planeGeometry args={[squareSize * 0.95, squareSize * 0.95]} />
+            <meshLambertMaterial color={getColorHex(color)} />
           </mesh>
         );
-      }
-    }
-  }
+      })}
+      {/* Face border */}
+      <mesh position={[0, 0, 0]}>
+        <planeGeometry args={[faceSize, faceSize]} />
+        <meshBasicMaterial color="#222222" />
+      </mesh>
+    </group>
+  );
+}
 
-  return <group>{smallCubes}</group>;
+// Main Rubik's Cube component
+function RubiksCube({ faceColors }: { faceColors: any }) {
+  const faces = [
+    { name: 'front', colors: faceColors.front || Array(9).fill('white'), position: [0, 0, 0.5], rotation: [0, 0, 0] },
+    { name: 'back', colors: faceColors.back || Array(9).fill('white'), position: [0, 0, -0.5], rotation: [0, Math.PI, 0] },
+    { name: 'right', colors: faceColors.right || Array(9).fill('white'), position: [0.5, 0, 0], rotation: [0, Math.PI / 2, 0] },
+    { name: 'left', colors: faceColors.left || Array(9).fill('white'), position: [-0.5, 0, 0], rotation: [0, -Math.PI / 2, 0] },
+    { name: 'top', colors: faceColors.top || Array(9).fill('white'), position: [0, 0.5, 0], rotation: [-Math.PI / 2, 0, 0] },
+    { name: 'bottom', colors: faceColors.bottom || Array(9).fill('white'), position: [0, -0.5, 0], rotation: [Math.PI / 2, 0, 0] },
+  ];
+
+  return (
+    <group>
+      {faces.map((face) => (
+        <CubeFace 
+          key={face.name}
+          colors={face.colors}
+          position={face.position as [number, number, number]}
+          rotation={face.rotation as [number, number, number]}
+        />
+      ))}
+    </group>
+  );
 }
 
 export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
-  const { faceColors, saveCube } = useCube();
+  const { faceColors } = useCube();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const handleSave = () => {
-    saveCube();
-    // Show success message or toast
+  const validateCube = () => {
+    const COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'];
+    const colorCounts = COLORS.reduce((acc, color) => ({ ...acc, [color]: 0 }), {} as Record<string, number>);
+    
+    Object.values(faceColors).forEach(face => {
+      if (face) {
+        face.forEach((color: string) => {
+          if (color in colorCounts) {
+            colorCounts[color]++;
+          }
+        });
+      }
+    });
+    
+    return Object.values(colorCounts).every(count => count === 9);
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My Rubik\'s Cube - CubeVision',
-          text: 'Check out my scanned Rubik\'s Cube!',
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Share failed:', error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-    }
-  };
+  const isValid = validateCube();
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Your 3D Rubik's Cube
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-            Interact with your cube - rotate, zoom, and explore every angle
-          </p>
-        </div>
+    <div className="min-h-screen relative">
+      {/* Hero Overlay */}
+      <div className="absolute inset-0 bg-hero-overlay pointer-events-none"></div>
+      
+      <div className="relative z-10 min-h-screen px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 pt-8">
+            <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
+              Your 3D Cube
+            </h1>
+            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
+              Interact with your cube - rotate, zoom, and explore every angle
+            </p>
+          </div>
 
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* 3D Viewer */}
-          <div className="lg:col-span-3">
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Interactive 3D Model</CardTitle>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleFullscreen}
-                    >
-                      <Maximize className="w-4 h-4" />
-                    </Button>
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* 3D Viewer */}
+            <div className="lg:col-span-3">
+              <div className="glass-panel overflow-hidden">
+                <div className="p-6 pb-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-white">Interactive 3D Model</h2>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={toggleFullscreen}
+                        className="w-10 h-10 rounded-full border border-white-80 hover:bg-white-20 transition-smooth flex items-center justify-center"
+                      >
+                        <Maximize className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
+                
                 <div 
-                  className={`bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 ${
-                    isFullscreen ? 'fixed inset-0 z-50' : 'h-96 lg:h-[600px]'
+                  className={`relative ${
+                    isFullscreen ? 'fixed inset-0 z-50 bg-app-gradient' : 'h-96 lg:h-[600px] bg-transparent'
                   }`}
                 >
                   <Canvas
                     camera={{ position: [4, 4, 4], fov: 45 }}
                     shadows
                   >
-                    <ambientLight intensity={0.6} />
-                    <directionalLight
-                      position={[5, 5, 5]}
-                      intensity={0.8}
+                    <ambientLight intensity={0.4} />
+                    <directionalLight 
+                      position={[5, 5, 5]} 
+                      intensity={0.8} 
                       castShadow
                       shadow-mapSize-width={2048}
                       shadow-mapSize-height={2048}
@@ -239,103 +181,95 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
                   
                   {isFullscreen && (
                     <div className="absolute top-4 right-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
+                      <button
                         onClick={toggleFullscreen}
-                        className="bg-white/90 dark:bg-gray-900/90"
+                        className="btn-outline px-4 py-2 text-sm bg-white-10/90 backdrop-blur-sm"
                       >
                         Exit Fullscreen
-                      </Button>
+                      </button>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
 
-          {/* Controls & Info */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Controls</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+            {/* Controls & Info */}
+            <div className="space-y-6">
+              <div className="glass-panel p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Controls</h3>
+                <div className="text-sm text-white-80 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-orchid rounded-full"></div>
                     <span>Click and drag to rotate</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-coral rounded-full"></div>
                     <span>Scroll to zoom in/out</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-steel rounded-full"></div>
                     <span>Double-click to reset view</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  onClick={handleSave}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Cube
-                </Button>
-                
-                <Button
-                  onClick={handleShare}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Share className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Reset View
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Solver Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">🚀</span>
+              <div className="glass-panel p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Cube Statistics</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white-80">Total Squares:</span>
+                    <span className="font-mono text-white">54</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Coming Soon!</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    The solving algorithm is in development. For now, explore your cube in 3D!
-                  </p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white-80">Faces Completed:</span>
+                    <span className="font-mono text-white">{Object.keys(faceColors).length}/6</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white-80">Validation:</span>
+                    <span className={`font-mono ${isValid ? 'text-orchid' : 'text-coral'}`}>
+                      {isValid ? 'Valid' : 'Check needed'}
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <Button onClick={onBack} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Color Detection
-          </Button>
+              <div className="glass-panel p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Next Steps</h3>
+                <div className="space-y-3">
+                  <div className="text-sm text-white-80">
+                    <p className="mb-2">Your cube visualization is complete! You can:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Explore different angles</li>
+                      <li>• Study the color patterns</li>
+                      <li>• Use this for learning algorithms</li>
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="btn-outline w-full py-2 flex items-center justify-center space-x-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Start Over</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-12">
+            <button onClick={onBack} className="btn-outline px-6 py-3 flex items-center space-x-2">
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Detection</span>
+            </button>
+            
+            <button 
+              onClick={() => window.open('/learning', '_blank')}
+              className="btn-primary px-6 py-3 flex items-center space-x-2"
+            >
+              <span>Learn to Solve</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -5,12 +5,42 @@ export default {
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        'display': ['Gilroy', 'Poppins', 'Inter', '-apple-system', 'system-ui', 'sans-serif'],
+        'sans': ['Inter', '-apple-system', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        'display': 'clamp(48px, 9vw, 124px)',
+        'display-sm': 'clamp(28px, 4vw, 56px)',
+      },
+      letterSpacing: {
+        'tight': '-0.02em',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        '2xl': '24px',
+      },
+      backdropBlur: {
+        '20': '20px',
+      },
+      boxShadow: {
+        'soft-3d': '0 20px 60px rgba(0,0,0,0.35)',
+        'glass': '0 8px 30px rgba(0,0,0,0.25)',
       },
       colors: {
+        // Brand colors
+        'white': '#FFFFFF',
+        'orchid': '#D174D2',
+        'coral': '#E0563F', 
+        'steel': '#3F567F',
+        'plum': '#412653',
+        'black-90': 'rgba(0,0,0,0.9)',
+        'white-80': 'rgba(255,255,255,0.8)',
+        'white-20': 'rgba(255,255,255,0.2)',
+        'white-10': 'rgba(255,255,255,0.1)',
+        
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -61,6 +91,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      backgroundImage: {
+        'app-gradient': 'linear-gradient(115deg, #2C3E57 0%, #3F567F 25%, #4B3B7A 55%, #412653 100%)',
+        'hero-overlay': 'radial-gradient(closest-side at 65% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.0) 70%)',
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
       keyframes: {
         "accordion-down": {

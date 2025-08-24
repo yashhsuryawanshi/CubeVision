@@ -18,7 +18,6 @@ type AppScreen = 'welcome' | 'upload' | 'detection' | 'cube' | 'learning';
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('welcome');
-  const [darkMode, setDarkMode] = useState(false);
   const { cubeState, resetCube } = useCube();
 
   const handleNavigation = (screen: AppScreen) => {
@@ -30,43 +29,30 @@ function AppContent() {
     setCurrentScreen('welcome');
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
-
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-app-gradient">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="fixed top-0 left-0 right-0 z-50 glass-panel border-0 border-b border-white-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-red-500 via-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm"></div>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">CubeVision</h1>
+            <div className="flex items-center space-x-3">
+              <div className="text-white text-sm font-medium tracking-[0.12em]">CV</div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-6">
               {currentScreen !== 'welcome' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleHome}
-                  className="flex items-center space-x-1"
+                  className="text-white-80 hover:text-white transition-smooth text-sm font-medium"
                 >
-                  <Home className="w-4 h-4" />
-                  <span>Home</span>
-                </Button>
+                  Home
+                </button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="flex items-center space-x-1"
-              >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
+              <button className="text-white-80 hover:text-white transition-smooth text-sm font-medium">
+                Digital
+              </button>
+              <button className="text-white-80 hover:text-white transition-smooth text-sm font-medium">
+                Account
+              </button>
             </div>
           </div>
         </div>

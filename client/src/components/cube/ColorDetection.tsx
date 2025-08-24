@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Progress } from "../ui/progress";
-import { Badge } from "../ui/badge";
-import { ArrowLeft, ArrowRight, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
 import { detectColorsFromImage } from "../../lib/roboflow";
-import FaceGrid from "./FaceGrid";
 import ColorPalette from "./ColorPalette";
+import FaceGrid from "./FaceGrid";
 
 interface ColorDetectionProps {
   onNext: () => void;
@@ -19,38 +15,50 @@ const CUBE_FACES = [
   { id: 'back', name: 'Back', color: 'bg-orange-500' },
   { id: 'left', name: 'Left', color: 'bg-green-500' },
   { id: 'right', name: 'Right', color: 'bg-blue-500' },
-  { id: 'top', name: 'Top', color: 'bg-white border' },
+  { id: 'top', name: 'Top', color: 'bg-white' },
   { id: 'bottom', name: 'Bottom', color: 'bg-yellow-400' },
 ] as const;
 
+const COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'] as const;
+
 export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) {
-  const { faceImages, faceColors, setFaceColors, cubeState } = useCube();
+  const { faceImages, faceColors, setFaceColors } = useCube();
+  const [selectedFace, setSelectedFace] = useState<string>('front');
   const [processing, setProcessing] = useState(false);
   const [processedFaces, setProcessedFaces] = useState<Set<string>>(new Set());
-  const [selectedFace, setSelectedFace] = useState('front');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showOriginal, setShowOriginal] = useState(false);
 
   useEffect(() => {
-    processAllImages();
+    // Auto-start processing when component mounts
+    if (Object.keys(faceImages).length > 0 && processedFaces.size === 0) {
+      processAllFaces();
+    }
   }, []);
 
-  const processAllImages = async () => {
+  const processAllFaces = async () => {
     setProcessing(true);
-    setErrors({});
-    
     const faceIds = Object.keys(faceImages);
+    
     for (const faceId of faceIds) {
       try {
-        const imageData = faceImages[faceId as keyof typeof faceImages];
-        if (imageData) {
-          const detectedColors = await detectColorsFromImage(imageData);
-          setFaceColors(faceId as any, detectedColors);
+        const imageDataUrl = faceImages[faceId as keyof typeof faceImages];
+        if (imageDataUrl) {
+          // Convert data URL to blob
+          const response = await fetch(imageDataUrl);
+          const blob = await response.blob();
+          
+          const colors = await detectColorsFromImage(imageDataUrl);
+          setFaceColors(faceId as any, colors);
           setProcessedFaces(prev => new Set([...prev, faceId]));
+          
+          // Small delay for better UX
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.error(`Error processing ${faceId} face:`, error);
-        setErrors(prev => ({ ...prev, [faceId]: 'Color detection failed. Please adjust manually.' }));
-        // Set default colors as fallback
+        console.error(`Error processing ${faceId}:`, error);
+        setErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
+        // Set fallback colors
         setFaceColors(faceId as any, Array(9).fill('white'));
         setProcessedFaces(prev => new Set([...prev, faceId]));
       }
@@ -59,40 +67,37 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
     setProcessing(false);
   };
 
-  const handleColorChange = (faceId: string, squareIndex: number, color: string) => {
-    const currentColors = faceColors[faceId as keyof typeof faceColors] || Array(9).fill('white');
+  const handleColorChange = (face: string, squareIndex: number, color: string) => {
+    const currentColors = faceColors[face as keyof typeof faceColors] || Array(9).fill('white');
     const newColors = [...currentColors];
     newColors[squareIndex] = color;
-    setFaceColors(faceId as any, newColors);
+    setFaceColors(face as any, newColors);
     
-    // Clear any error for this face
-    if (errors[faceId]) {
+    // Remove error for this face if it exists
+    if (errors[face]) {
       setErrors(prev => {
         const newErrors = { ...prev };
-        delete newErrors[faceId];
+        delete newErrors[face];
         return newErrors;
       });
     }
   };
 
   const validateCube = () => {
-    // Basic validation: each color should appear exactly 9 times
-    const colorCounts: Record<string, number> = {};
+    const colorCounts = COLORS.reduce((acc, color) => ({ ...acc, [color]: 0 }), {} as Record<string, number>);
     
-    Object.values(faceColors).forEach(colors => {
-      colors.forEach(color => {
-        colorCounts[color] = (colorCounts[color] || 0) + 1;
-      });
-    });
-
-    const validColors = ['white', 'yellow', 'red', 'orange', 'green', 'blue'];
-    for (const color of validColors) {
-      if (colorCounts[color] !== 9) {
-        return false;
+    Object.values(faceColors).forEach(face => {
+      if (face) {
+        face.forEach(color => {
+          if (color in colorCounts) {
+            colorCounts[color]++;
+          }
+        });
       }
-    }
-
-    return true;
+    });
+    
+    // Each color should appear exactly 9 times
+    return Object.values(colorCounts).every(count => count === 9);
   };
 
   const progress = (processedFaces.size / Object.keys(faceImages).length) * 100;
@@ -100,92 +105,111 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
   const isValid = validateCube();
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Color Detection & Correction
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-            AI-detected colors are shown below. Click any square to manually correct colors.
-          </p>
+    <div className="min-h-screen relative">
+      {/* Hero Overlay */}
+      <div className="absolute inset-0 bg-hero-overlay pointer-events-none"></div>
+      
+      <div className="relative z-10 min-h-screen px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 pt-8">
+            <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
+              Color Detection
+            </h1>
+            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
+              AI-detected colors are shown below. Click any square to manually correct colors.
+            </p>
           
-          {processing && (
-            <div className="max-w-md mx-auto mb-4">
-              <Progress value={progress} className="h-2" />
-              <div className="flex items-center justify-center space-x-2 mt-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Processing images with AI... {Math.round(progress)}%
-                </p>
+            {processing && (
+              <div className="max-w-md mx-auto mb-6">
+                <div className="glass-panel p-4">
+                  <div className="w-full bg-white-10 rounded-full h-3 mb-3">
+                    <div 
+                      className="bg-orchid h-3 rounded-full transition-all duration-300" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-orchid" />
+                    <p className="text-sm text-white-80">
+                      Processing images with AI... {Math.round(progress)}%
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {allProcessed && (
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              {isValid ? (
-                <>
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-green-600 dark:text-green-400 font-medium">Cube state is valid!</span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-5 h-5 text-yellow-500" />
-                  <span className="text-yellow-600 dark:text-yellow-400 font-medium">Please check color distribution</span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Face Selection */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {CUBE_FACES.map((face) => (
-            <Button
-              key={face.id}
-              onClick={() => setSelectedFace(face.id)}
-              variant={selectedFace === face.id ? "default" : "outline"}
-              size="sm"
-              className="relative"
-            >
-              <div className={`w-3 h-3 ${face.color} rounded-sm mr-2`}></div>
-              {face.name}
-              {processedFaces.has(face.id) && (
-                <CheckCircle className="w-4 h-4 ml-1 text-green-500" />
-              )}
-              {errors[face.id] && (
-                <AlertCircle className="w-4 h-4 ml-1 text-yellow-500" />
-              )}
-            </Button>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Face Editor */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <div className={`w-4 h-4 ${CUBE_FACES.find(f => f.id === selectedFace)?.color} rounded-sm`}></div>
-                    <span>{CUBE_FACES.find(f => f.id === selectedFace)?.name} Face</span>
-                  </CardTitle>
-                  {errors[selectedFace] && (
-                    <Badge variant="destructive" className="text-xs">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      Manual adjustment needed
-                    </Badge>
+            {allProcessed && (
+              <div className="glass-panel p-4 max-w-md mx-auto mb-6">
+                <div className="flex items-center justify-center space-x-2">
+                  {isValid ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 text-orchid" />
+                      <span className="text-white font-medium">Cube state is valid!</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-5 h-5 text-coral" />
+                      <span className="text-white font-medium">Please check color distribution</span>
+                    </>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
+              </div>
+            )}
+          </div>
+
+          {/* Face Selection */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {CUBE_FACES.map((face) => (
+              <button
+                key={face.id}
+                onClick={() => setSelectedFace(face.id)}
+                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth ${
+                  selectedFace === face.id ? 'bg-orchid/20 border-orchid/30' : 'hover:bg-white-10'
+                }`}
+              >
+                <div className={`w-4 h-4 ${face.color} rounded-sm`}></div>
+                <span className="text-white font-medium">{face.name}</span>
+                {processedFaces.has(face.id) && (
+                  <CheckCircle className="w-4 h-4 text-orchid" />
+                )}
+                {errors[face.id] && (
+                  <AlertCircle className="w-4 h-4 text-coral" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Face Editor */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="glass-panel p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-6 h-6 ${CUBE_FACES.find(f => f.id === selectedFace)?.color} rounded-lg`}></div>
+                    <h2 className="text-2xl font-bold text-white">{CUBE_FACES.find(f => f.id === selectedFace)?.name} Face</h2>
+                  </div>
+                  {errors[selectedFace] && (
+                    <div className="bg-coral/20 border border-coral/30 px-3 py-1 rounded-full flex items-center space-x-1">
+                      <AlertCircle className="w-4 h-4 text-coral" />
+                      <span className="text-sm text-white">Manual adjustment needed</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Original Image */}
                   <div>
-                    <h4 className="font-medium mb-3 text-gray-900 dark:text-white">Original Image</h4>
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-white">Original Image</h4>
+                      <button
+                        onClick={() => setShowOriginal(!showOriginal)}
+                        className="w-8 h-8 rounded-full border border-white-80 hover:bg-white-20 transition-smooth flex items-center justify-center"
+                      >
+                        {showOriginal ? <EyeOff className="w-4 h-4 text-white" /> : <Eye className="w-4 h-4 text-white" />}
+                      </button>
+                    </div>
+                    <div className="aspect-square bg-white-10 rounded-2xl overflow-hidden">
                       {faceImages[selectedFace as keyof typeof faceImages] && (
                         <img
                           src={faceImages[selectedFace as keyof typeof faceImages]}
@@ -198,47 +222,37 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
 
                   {/* Color Grid */}
                   <div>
-                    <h4 className="font-medium mb-3 text-gray-900 dark:text-white">Detected Colors</h4>
+                    <h4 className="font-semibold mb-3 text-white">Detected Colors</h4>
                     <FaceGrid
                       colors={faceColors[selectedFace as keyof typeof faceColors] || Array(9).fill('white')}
                       onColorClick={(index) => {
-                        // Handle color selection - will be managed by ColorPalette
+                        // Color selection is handled by ColorPalette
                       }}
                       selectedSquare={null}
                     />
                     {processing && selectedFace && !processedFaces.has(selectedFace) && (
-                      <div className="mt-2 flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400">
+                      <div className="mt-2 flex items-center justify-center space-x-2 text-orchid">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span className="text-sm">Processing...</span>
                       </div>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* All Faces Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>All Faces Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {/* All Faces Preview */}
+              <div className="glass-panel p-6">
+                <h3 className="text-2xl font-bold text-white mb-6">All Faces</h3>
+                <div className="grid grid-cols-3 gap-4">
                   {CUBE_FACES.map((face) => (
-                    <div
-                      key={face.id}
-                      className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                        selectedFace === face.id 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                      onClick={() => setSelectedFace(face.id)}
-                    >
-                      <div className="flex items-center space-x-2 mb-2">
+                    <div key={face.id} className="text-center">
+                      <div className="flex items-center justify-center space-x-2 mb-2">
                         <div className={`w-3 h-3 ${face.color} rounded-sm`}></div>
-                        <span className="text-sm font-medium">{face.name}</span>
-                        {processedFaces.has(face.id) && (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-sm font-medium text-white">{face.name}</span>
+                        {processedFaces.has(face.id) ? (
+                          <CheckCircle className="w-4 h-4 text-orchid" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border border-white-40"></div>
                         )}
                       </div>
                       <div className="grid grid-cols-3 gap-0.5">
@@ -260,35 +274,35 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+
+            {/* Color Palette */}
+            <div>
+              <ColorPalette
+                selectedFace={selectedFace}
+                colors={faceColors[selectedFace as keyof typeof faceColors] || Array(9).fill('white')}
+                onColorChange={(squareIndex, color) => handleColorChange(selectedFace, squareIndex, color)}
+              />
+            </div>
           </div>
 
-          {/* Color Palette */}
-          <div>
-            <ColorPalette
-              selectedFace={selectedFace}
-              colors={faceColors[selectedFace as keyof typeof faceColors] || Array(9).fill('white')}
-              onColorChange={(squareIndex, color) => handleColorChange(selectedFace, squareIndex, color)}
-            />
+          {/* Navigation */}
+          <div className="flex justify-between mt-12">
+            <button onClick={onBack} className="btn-outline px-6 py-3 flex items-center space-x-2">
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Upload</span>
+            </button>
+            
+            <button 
+              onClick={onNext} 
+              disabled={!allProcessed}
+              className={`btn-primary px-6 py-3 flex items-center space-x-2 ${!allProcessed ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span>View 3D Cube</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <Button onClick={onBack} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Upload
-          </Button>
-          
-          <Button 
-            onClick={onNext} 
-            disabled={!allProcessed}
-            className="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 hover:from-red-600 hover:via-green-600 hover:to-blue-600 text-white border-0"
-          >
-            View 3D Cube
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
         </div>
       </div>
     </div>

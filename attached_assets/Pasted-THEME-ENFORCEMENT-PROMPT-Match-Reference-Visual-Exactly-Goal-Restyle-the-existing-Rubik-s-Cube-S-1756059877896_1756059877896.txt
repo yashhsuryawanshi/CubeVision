@@ -1,0 +1,193 @@
+THEME ENFORCEMENT PROMPT — Match Reference Visual Exactly
+
+Goal: Restyle the existing Rubik’s Cube Solver (3×3) app to visually match the attached reference image exactly—colors, mood, composition, and typography. Override any default/common theme. Apply the theme globally across all screens and components (web or React Native/Expo). No deviations.
+
+1) Brand Tokens (Single Source of Truth)
+
+Create global design tokens (CSS variables or Tailwind theme or RN StyleSheet vars) and use them everywhere:
+
+colors:
+  white:        #FFFFFF
+  orchid:       #D174D2   // accent-1 (primary accent)
+  coral:        #E0563F   // accent-2 (cta/interactive)
+  steel:        #3F567F   // cool dark blue (bg depth, text subtle)
+  plum:         #412653   // deep purple (primary bg panel)
+  black-90:     rgba(0,0,0,0.9)
+  white-80:     rgba(255,255,255,0.8)
+  white-20:     rgba(255,255,255,0.2)
+
+gradients:
+  appBackground:
+    // subtle dusk gradient like reference
+    linear(115deg, #2C3E57 0%, #3F567F 25%, #4B3B7A 55%, #412653 100%)
+  heroOverlay:
+    radial(closest-side at 65% 30%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.0) 70%)
+
+shadows:
+  soft-3D: 0 20px 60px rgba(0,0,0,0.35)
+  glass:   0 8px 30px rgba(0,0,0,0.25)
+
+blur:
+  glass-20: backdrop-blur:20px
+
+radii:
+  2xl: 24px
+  full: 9999px
+
+typography:
+  display: "Gilroy, Poppins, Inter, -apple-system, system-ui, sans-serif" // heavy, round sans
+  weight-display: 800
+  weight-regular: 400
+  letter-tight: -0.02em
+  h1-size: clamp(48px, 9vw, 124px)  // massive like “Daily Bloom”
+  h2-size: clamp(28px, 4vw, 56px)
+  body-size: 16px–18px
+
+2) Global Layout Rules
+
+Background: Full-app background uses gradients.appBackground with a subtle heroOverlay radial highlight. No flat backgrounds anywhere.
+
+Composition: Left-aligned oversized display headline; right side has a thin stroked circular motif with large two-digit number (e.g., “02”) behind/overlapping hero art.
+
+Glassmorphism: Cards, toolbars, and controls are semi-transparent “glass” panels (blur glass-20, background white-20, border 1px white-20, shadow glass).
+
+Spacing: Generous negative letter spacing on display text; wide gutters; components use radii 2xl.
+
+3) Required UI Patterns (apply across app)
+
+Top Bar / Navigation
+
+Left: app monogram (e.g., DB style) in white, 14px, letter spacing +0.12em.
+
+Right: inline nav links (Digital, Account, Story, Profile) in white-80, hover to white.
+
+Transparent bar over gradient; no solid backgrounds.
+
+Hero Section on Home/Scanner
+
+H1 in white, weight 800, very large (use h1-size) with tight tracking.
+
+Place a thin 1.5px white circle (svg) partially overlapping hero art, containing a bold numeric badge (e.g., “02”) in white with subtle shadow.
+
+Two outline circular arrow buttons bottom-left, white stroke 1.5px, hover fill white-20.
+
+Primary Buttons
+
+Solid: background coral, text white, shadow soft-3D, radius 2xl.
+
+Outline: 1.5px white border, transparent fill, text white; hover → background white-20.
+
+Cards/Modals
+
+Glass panels (see above), title in white, body text white-80. Close icon is white with hover white.
+
+Inputs/Dropdowns
+
+Glass input: translucent field (white-10 to white-20), 1px border white-20, caret white, placeholder white-80.
+
+Focus ring: 2px orchid.
+
+Badges/Accents
+
+Use orchid for informational highlights and selection states.
+
+Use coral only for primary CTAs and strong emphasis.
+
+4) Apply Theme to Each App Screen
+A) Onboarding / Home
+
+Big display headline (e.g., “Solve Your Cube”) left; descriptive copy right in white-80.
+
+Hero 3D abstract/plant-like artwork placeholder can be replaced by the 3D cube canvas.
+
+Include circular motif with numeral “01/02/03” indicating steps.
+
+B) Upload / Face Capture
+
+Two-column layout (desktop): left instructions, right glass card with upload area.
+
+Upload dropzone is a glass panel with dashed white border at 1.5px; hover glow orchid.
+
+Progress and states use orchid; error uses coral.
+
+C) Detection & Color Correction
+
+Show a glass card with the detected 3×3 grid; each sticker tile:
+
+Square with rounded 8px, thin white border, subtle inner shadow.
+
+Confidence badge (tiny pill) in white-80 text over steel/plum subtle background.
+
+Color picker opens as a glass popover with the six cube colors and an “Apply” CTA in coral.
+
+D) 3D Cube View
+
+Canvas sits on gradient; add heroOverlay for glow.
+
+Orbit controls handles are invisible; add gentle soft shadow under the cube.
+
+Toolbar (Reset, Flip, Share) is a glass floating bar.
+
+E) Validate & (Future) Solve
+
+Validation messages in white-80; error inline chips in coral.
+
+“Continue” button uses solid coral variant; secondary uses outline white.
+
+5) Typography & Copy Rules
+
+Headings: white, weight 800, tight tracking.
+
+Body: white-80, weight 400–500.
+
+Numeral overlays (e.g., “02”) use ultra-bold display font in white with 15–25% opacity duplication for background echo if desired.
+
+6) Iconography & Lines
+
+All strokes white 1.5px (arrows, circles, separators).
+
+Circular navigation buttons exactly as in reference—outline circle, centered arrow icon.
+
+7) Transitions & Motion
+
+Global ease: cubic-bezier(0.22, 1, 0.36, 1); duration 250–450ms.
+
+Hover states brighten to white; glass panels slightly lift with shadow increase.
+
+Page transitions: subtle fade + 8px upward motion.
+
+8) Accessibility
+
+Minimum contrast for text on glass: 4.5:1 (increase white opacity if needed).
+
+Focus ring visible on all interactive elements (orchid ring).
+
+9) Implementation Notes (Framework-Agnostic)
+
+Tailwind (preferred): extend theme with the token values above; set fontFamily.display and fontWeight.
+
+React Native/Expo: create a theme.ts with the same tokens, use a ThemeProvider; for blur use expo-blur with intensity ~20–25; for shadows use elevation + shadow props.
+
+3D Canvas: keep background transparent so gradient shows through.
+
+10) Hard “Do / Do Not”
+
+DO use only the five brand colors listed (white, orchid, coral, steel, plum) for UI chrome.
+
+DO keep background as dusk gradient (no flat white sections).
+
+DO NOT introduce generic blues/greens/greys or default component themes.
+
+DO NOT change headline scale—keep oversized as in reference.
+
+DO NOT use square corners; all interactive elements have rounded 2xl.
+
+11) Sample Class Guidance (if using Tailwind)
+
+body classes: min-h-screen bg-[linear-gradient(115deg,#2C3E57_0%,#3F567F_25%,#4B3B7A_55%,#412653_100%)]
+
+Headline: text-white font-extrabold tracking-tight text-[clamp(48px,9vw,124px)]
+
+Glass card: backdrop-blur-[20px] bg-white/10 border border-white/20 shadow-[0_8px_30px_rgba(0,0,0,0.25)] rounded-2xl
+
+Outline circle button: rounded-full border border-white/80 h-12 w-12 grid place-items-center hover:bg-white/20 transition
