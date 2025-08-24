@@ -1,0 +1,73 @@
+Build me a Rubik’s Cube Solver App (3x3 version) designed for beginners and learners. The app should be interactive, educational, and visually engaging.
+
+🔑 Core Features & Workflow
+
+Onboarding / Home Screen
+
+A clean welcome screen introducing the app: "Solve your Rubik’s Cube step by step."
+
+Simple navigation buttons: Start Scanning, Tutorials, About the Cube, My Saved Cubes.
+
+Image Upload & Cube Face Capture
+
+Users can upload or capture images of the 6 faces of their 3x3 Rubik’s Cube.
+
+Each uploaded image is processed by my custom color detection model (from Roboflow).
+
+Ensure consistent cube face orientation instructions (with visual guides so users don’t upload faces in the wrong order).
+
+Color Detection & Correction
+
+Automatically detect cube colors from the uploaded images.
+
+Display a 2D grid preview of the cube face after detection.
+
+Allow users to manually correct any wrongly detected colors by clicking/tapping squares and selecting from a color palette (6 standard Rubik’s colors).
+
+3D Cube Visualization
+
+After all 6 faces are uploaded and confirmed, render a 3D interactive Rubik’s Cube model.
+
+Users should be able to rotate and zoom in/out on the cube.
+
+Updated colors should reflect immediately on the 3D model.
+
+Solver (Later Integration)
+
+Placeholder for the solving algorithm.
+
+For now, just show: “Solver coming soon. For now, explore your cube in 3D!”
+
+Future-ready: accept the cube state and output solving steps with 3D animations.
+
+Learning & Education Section
+
+A section with beginner tutorials: “How to Hold the Cube”, “Basic Notations (R, L, U, D, F, B)”, and “Beginner’s Solving Method”.
+
+Option to practice moves with an interactive virtual cube.
+
+User Experience Improvements
+
+Save and reload scanned cubes.
+
+Light/Dark mode.
+
+Error handling (e.g., if a cube state is invalid, prompt user to fix colors).
+
+Smooth transitions & animations when moving between steps.
+
+🎨 Design & UI
+
+Use a modern, clean, minimalistic design with a focus on interactivity.
+
+3D cube should be the centerpiece with soft shadows and smooth animations.
+
+Tailwind-style UI elements: rounded buttons, color-coded indicators, clear typography.
+
+🚀 Stretch Features (Optional, Nice-to-Have)
+
+AR Mode: Allow scanning the cube in real-time using the phone’s camera.
+
+Share Feature: Share your cube’s state or solving steps with friends.
+
+Achievements: Gamify learning by tracking solved cubes, fastest uploads, etc.
