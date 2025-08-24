@@ -8,12 +8,12 @@ interface ImageUploadProps {
 }
 
 const CUBE_FACES = [
-  { id: 'front', name: 'Front', color: 'bg-red-500', instruction: 'Hold the cube with red face towards you' },
-  { id: 'back', name: 'Back', color: 'bg-orange-500', instruction: 'Rotate cube 180° to show back face' },
-  { id: 'left', name: 'Left', color: 'bg-green-500', instruction: 'Show the left side face' },
-  { id: 'right', name: 'Right', color: 'bg-blue-500', instruction: 'Show the right side face' },
-  { id: 'top', name: 'Top', color: 'bg-white', instruction: 'Tilt cube to show top face clearly' },
-  { id: 'bottom', name: 'Bottom', color: 'bg-yellow-400', instruction: 'Flip cube to show bottom face' },
+  { id: 'front', name: 'Front', instruction: 'Hold the cube with front face towards you' },
+  { id: 'back', name: 'Back', instruction: 'Rotate cube 180° to show back face' },
+  { id: 'left', name: 'Left', instruction: 'Show the left side face' },
+  { id: 'right', name: 'Right', instruction: 'Show the right side face' },
+  { id: 'top', name: 'Top', instruction: 'Tilt cube to show top face clearly' },
+  { id: 'bottom', name: 'Bottom', instruction: 'Flip cube to show bottom face' },
 ] as const;
 
 export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
@@ -70,12 +70,12 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
       <div className="relative z-10 min-h-screen px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 pt-8">
+          <div className="text-center mb-12 pt-8 animate-fade-in">
             <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
-              Capture Your Cube
+              Capture Your <span className="text-coral">Cube</span>
             </h1>
-            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
-              Upload or capture images of all 6 faces of your Rubik's Cube
+            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8 animate-slide-in">
+              Upload or capture images of all 6 faces of your Rubik's Cube for <span className="text-coral font-semibold">CubeVision</span> to analyze
             </p>
             
             <div className="max-w-md mx-auto mb-6">
@@ -94,19 +94,19 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
           </div>
 
           {/* Face Selection Tabs */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
+          <div className="flex flex-wrap justify-center gap-3 mb-12 animate-scale-in">
             {CUBE_FACES.map((face, index) => (
               <button
                 key={face.id}
                 onClick={() => setCurrentFace(index)}
-                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth ${
+                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth animate-on-hover ${
                   currentFace === index ? 'bg-orchid/20 border-orchid/30' : 'hover:bg-white-10'
                 }`}
               >
-                <div className={`w-4 h-4 ${face.color} rounded-sm`}></div>
+                <div className={`w-4 h-4 rounded-sm border border-white-40 transition-smooth ${faceImages[face.id as keyof typeof faceImages] ? 'bg-orchid animate-pulse-glow' : 'bg-white-10'}`}></div>
                 <span className="text-white font-medium">{face.name}</span>
                 {faceImages[face.id as keyof typeof faceImages] && (
-                  <Check className="w-4 h-4 text-orchid" />
+                  <Check className="w-4 h-4 text-orchid animate-scale-in" />
                 )}
               </button>
             ))}
@@ -114,9 +114,9 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Upload Area */}
-            <div className="glass-panel p-6">
+            <div className="glass-panel p-6 animate-fade-in">
               <div className="flex items-center space-x-3 mb-6">
-                <div className={`w-6 h-6 ${CUBE_FACES[currentFace].color} rounded-lg`}></div>
+                <div className={`w-6 h-6 rounded-lg border border-white-40 ${faceImages[CUBE_FACES[currentFace].id as keyof typeof faceImages] ? 'bg-orchid' : 'bg-white-10'}`}></div>
                 <h2 className="text-2xl font-bold text-white">{CUBE_FACES[currentFace].name} Face</h2>
               </div>
 
@@ -131,7 +131,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
               </div>
 
               <div
-                className="border-2 border-dashed border-white-20 rounded-2xl p-8 text-center hover:border-orchid/50 transition-smooth cursor-pointer bg-white-10/50"
+                className="border-2 border-dashed border-white-20 rounded-2xl p-8 text-center hover:border-orchid/50 transition-smooth cursor-pointer bg-white-10/50 animate-on-hover"
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => document.getElementById(`file-input-${currentFace}`)?.click()}
@@ -177,7 +177,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
               <div className="mt-6 flex space-x-3">
                 <button
                   onClick={() => document.getElementById(`file-input-${currentFace}`)?.click()}
-                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2"
+                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2 animate-on-hover"
                 >
                   <Upload className="w-5 h-5" />
                   <span>Choose File</span>
@@ -204,7 +204,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                     };
                     input.click();
                   }}
-                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2"
+                  className="btn-outline flex-1 py-3 flex items-center justify-center space-x-2 animate-on-hover"
                 >
                   <Camera className="w-5 h-5" />
                   <span>Take Photo</span>
@@ -213,7 +213,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
             </div>
 
             {/* Preview Grid */}
-            <div className="glass-panel p-6">
+            <div className="glass-panel p-6 animate-slide-in">
               <h3 className="text-2xl font-bold text-white mb-6">Uploaded Faces</h3>
               <div className="grid grid-cols-3 gap-4">
                 {CUBE_FACES.map((face) => (
@@ -229,7 +229,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                       />
                     ) : (
                       <div className="text-center">
-                        <div className={`w-8 h-8 ${face.color} rounded-sm mx-auto mb-2 opacity-50`}></div>
+                        <div className={`w-8 h-8 rounded-sm mx-auto mb-2 border border-white-40 bg-white-10 opacity-50`}></div>
                         <p className="text-xs text-white-80">{face.name}</p>
                       </div>
                     )}
@@ -243,7 +243,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
           <div className="flex justify-between mt-12">
             <button 
               onClick={onBack} 
-              className="btn-outline px-6 py-3 flex items-center space-x-2"
+              className="btn-outline px-6 py-3 flex items-center space-x-2 animate-on-hover"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
@@ -252,7 +252,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
             <button 
               onClick={onNext} 
               disabled={!allImagesUploaded}
-              className={`btn-primary px-6 py-3 flex items-center space-x-2 ${!allImagesUploaded ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary px-6 py-3 flex items-center space-x-2 animate-on-hover ${!allImagesUploaded ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
             >
               <span>Process Images</span>
               <ArrowRight className="w-5 h-5" />

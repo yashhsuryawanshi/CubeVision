@@ -11,12 +11,12 @@ interface ColorDetectionProps {
 }
 
 const CUBE_FACES = [
-  { id: 'front', name: 'Front', color: 'bg-red-500' },
-  { id: 'back', name: 'Back', color: 'bg-orange-500' },
-  { id: 'left', name: 'Left', color: 'bg-green-500' },
-  { id: 'right', name: 'Right', color: 'bg-blue-500' },
-  { id: 'top', name: 'Top', color: 'bg-white' },
-  { id: 'bottom', name: 'Bottom', color: 'bg-yellow-400' },
+  { id: 'front', name: 'Front' },
+  { id: 'back', name: 'Back' },
+  { id: 'left', name: 'Left' },
+  { id: 'right', name: 'Right' },
+  { id: 'top', name: 'Top' },
+  { id: 'bottom', name: 'Bottom' },
 ] as const;
 
 const COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'] as const;
@@ -50,7 +50,7 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
           
           const colors = await detectColorsFromImage(imageDataUrl);
           setFaceColors(faceId as any, colors);
-          setProcessedFaces(prev => new Set([...prev, faceId]));
+          setProcessedFaces(prev => new Set([...Array.from(prev), faceId]));
           
           // Small delay for better UX
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -60,7 +60,7 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
         setErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
         // Set fallback colors
         setFaceColors(faceId as any, Array(9).fill('white'));
-        setProcessedFaces(prev => new Set([...prev, faceId]));
+        setProcessedFaces(prev => new Set([...Array.from(prev), faceId]));
       }
     }
     
@@ -112,12 +112,12 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
       <div className="relative z-10 min-h-screen px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 pt-8">
+          <div className="text-center mb-12 pt-8 animate-fade-in">
             <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
-              Color Detection
+              <span className="text-coral">CubeVision</span> Detection
             </h1>
-            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
-              AI-detected colors are shown below. Click any square to manually correct colors.
+            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8 animate-slide-in">
+              AI-detected colors are shown below. Click any square to manually correct colors if needed.
             </p>
           
             {processing && (
@@ -159,22 +159,22 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
           </div>
 
           {/* Face Selection */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
+          <div className="flex flex-wrap justify-center gap-3 mb-12 animate-scale-in">
             {CUBE_FACES.map((face) => (
               <button
                 key={face.id}
                 onClick={() => setSelectedFace(face.id)}
-                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth ${
+                className={`glass-panel px-4 py-3 flex items-center space-x-2 transition-smooth animate-on-hover ${
                   selectedFace === face.id ? 'bg-orchid/20 border-orchid/30' : 'hover:bg-white-10'
                 }`}
               >
-                <div className={`w-4 h-4 ${face.color} rounded-sm`}></div>
+                <div className={`w-4 h-4 rounded-sm border border-white-40 transition-smooth ${processedFaces.has(face.id) ? 'bg-orchid animate-pulse-glow' : 'bg-white-10'}`}></div>
                 <span className="text-white font-medium">{face.name}</span>
                 {processedFaces.has(face.id) && (
-                  <CheckCircle className="w-4 h-4 text-orchid" />
+                  <CheckCircle className="w-4 h-4 text-orchid animate-scale-in" />
                 )}
                 {errors[face.id] && (
-                  <AlertCircle className="w-4 h-4 text-coral" />
+                  <AlertCircle className="w-4 h-4 text-coral animate-scale-in" />
                 )}
               </button>
             ))}
@@ -182,11 +182,11 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Face Editor */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 animate-fade-in">
               <div className="glass-panel p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-6 h-6 ${CUBE_FACES.find(f => f.id === selectedFace)?.color} rounded-lg`}></div>
+                    <div className={`w-6 h-6 rounded-lg border border-white-40 ${processedFaces.has(selectedFace) ? 'bg-orchid' : 'bg-white-10'}`}></div>
                     <h2 className="text-2xl font-bold text-white">{CUBE_FACES.find(f => f.id === selectedFace)?.name} Face</h2>
                   </div>
                   {errors[selectedFace] && (
@@ -241,13 +241,13 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
               </div>
 
               {/* All Faces Preview */}
-              <div className="glass-panel p-6">
+              <div className="glass-panel p-6 animate-slide-in">
                 <h3 className="text-2xl font-bold text-white mb-6">All Faces</h3>
                 <div className="grid grid-cols-3 gap-4">
                   {CUBE_FACES.map((face) => (
                     <div key={face.id} className="text-center">
                       <div className="flex items-center justify-center space-x-2 mb-2">
-                        <div className={`w-3 h-3 ${face.color} rounded-sm`}></div>
+                        <div className={`w-3 h-3 rounded-sm border border-white-40 ${processedFaces.has(face.id) ? 'bg-orchid' : 'bg-white-10'}`}></div>
                         <span className="text-sm font-medium text-white">{face.name}</span>
                         {processedFaces.has(face.id) ? (
                           <CheckCircle className="w-4 h-4 text-orchid" />
@@ -289,7 +289,7 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
 
           {/* Navigation */}
           <div className="flex justify-between mt-12">
-            <button onClick={onBack} className="btn-outline px-6 py-3 flex items-center space-x-2">
+            <button onClick={onBack} className="btn-outline px-6 py-3 flex items-center space-x-2 animate-on-hover">
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Upload</span>
             </button>
@@ -297,7 +297,7 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
             <button 
               onClick={onNext} 
               disabled={!allProcessed}
-              className={`btn-primary px-6 py-3 flex items-center space-x-2 ${!allProcessed ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary px-6 py-3 flex items-center space-x-2 animate-on-hover ${!allProcessed ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
             >
               <span>View 3D Cube</span>
               <ArrowRight className="w-5 h-5" />

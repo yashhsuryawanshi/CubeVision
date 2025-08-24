@@ -36,7 +36,7 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="text-white text-sm font-medium tracking-[0.12em]">CV</div>
+              <div className="text-white text-lg font-bold tracking-wide">CubeVision</div>
             </div>
             <div className="flex items-center space-x-6">
               {currentScreen !== 'welcome' && (

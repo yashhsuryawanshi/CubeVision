@@ -12,7 +12,7 @@
     margin: 0;
     padding: 0;
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh;
     background: linear-gradient(115deg, #2C3E57 0%, #3F567F 25%, #4B3B7A 55%, #412653 100%);
     color: #FFFFFF;
     overflow-x: hidden;
@@ -38,6 +38,19 @@
     transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   
+  .animate-on-hover {
+    transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  
+  .animate-on-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+  
+  .stagger-animation {
+    animation-delay: calc(var(--animation-order, 0) * 0.1s);
+  }
+  
   .text-display {
     @apply font-display font-extrabold tracking-tight text-white;
   }
@@ -49,8 +62,7 @@
 
 #root {
   width: 100%;
-  height: 100%;
-  position: fixed;
+  min-height: 100vh;
 }
 
 canvas {

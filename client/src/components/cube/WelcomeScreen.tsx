@@ -15,24 +15,24 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
           {/* Main Hero Layout */}
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Hero Text */}
-            <div className="space-y-8">
+            <div className="space-y-8 animate-fade-in">
               <div className="space-y-6">
                 <h1 className="text-display text-white font-extrabold tracking-tight leading-none">
-                  Solve Your
+                  <span className="text-coral animate-pulse-glow">CubeVision</span>
                   <br />
-                  <span className="text-coral">Cube</span>
+                  Solve Your Cube
                 </h1>
                 
-                <p className="text-xl text-white-80 max-w-lg leading-relaxed">
+                <p className="text-xl text-white-80 max-w-lg leading-relaxed animate-slide-in">
                   Master the Rubik's Cube with AI-powered color detection and interactive 3D visualization designed for beginners and learners.
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 animate-scale-in">
                 <button 
                   onClick={() => onNavigate('upload')}
-                  className="btn-primary px-8 py-4 text-lg font-semibold flex items-center justify-center space-x-3"
+                  className="btn-primary px-8 py-4 text-lg font-semibold flex items-center justify-center space-x-3 animate-on-hover"
                 >
                   <Camera className="w-6 h-6" />
                   <span>Start Scanning</span>
@@ -40,7 +40,7 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
                 
                 <button 
                   onClick={() => onNavigate('learning')}
-                  className="btn-outline px-8 py-4 text-lg font-semibold flex items-center justify-center space-x-3"
+                  className="btn-outline px-8 py-4 text-lg font-semibold flex items-center justify-center space-x-3 animate-on-hover"
                 >
                   <BookOpen className="w-6 h-6" />
                   <span>Learn Basics</span>
@@ -75,7 +75,7 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
                 
                 {/* Center 3D Cube Preview */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-32 h-32 bg-gradient-to-br from-coral via-orchid to-steel rounded-2xl flex items-center justify-center shadow-glass transform rotate-12">
+                  <div className="w-32 h-32 bg-gradient-to-br from-coral via-orchid to-steel rounded-2xl flex items-center justify-center shadow-glass transform rotate-12 animate-float">
                     <Box className="w-16 h-16 text-white" />
                   </div>
                 </div>
@@ -85,7 +85,7 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
 
           {/* Features Section */}
           <div className="mt-24 grid md:grid-cols-3 gap-8">
-            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth">
+            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth animate-on-hover animate-fade-in stagger-animation" style={{ '--animation-order': 0 } as React.CSSProperties}>
               <div className="w-16 h-16 rounded-2xl bg-orchid/20 flex items-center justify-center mx-auto mb-4">
                 <Camera className="w-8 h-8 text-orchid" />
               </div>
@@ -95,7 +95,7 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
               </p>
             </div>
 
-            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth">
+            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth animate-on-hover animate-fade-in stagger-animation" style={{ '--animation-order': 1 } as React.CSSProperties}>
               <div className="w-16 h-16 rounded-2xl bg-steel/20 flex items-center justify-center mx-auto mb-4">
                 <Box className="w-8 h-8 text-white" />
               </div>
@@ -105,7 +105,7 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
               </p>
             </div>
 
-            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth">
+            <div className="glass-panel p-6 text-center hover:bg-white-10 transition-smooth animate-on-hover animate-fade-in stagger-animation" style={{ '--animation-order': 2 } as React.CSSProperties}>
               <div className="w-16 h-16 rounded-2xl bg-coral/20 flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-8 h-8 text-coral" />
               </div>
