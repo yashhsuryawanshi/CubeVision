@@ -1,4 +1,5 @@
 import { Camera, BookOpen, Box } from "lucide-react";
+import RotatingCube from "../RotatingCube";
 
 interface WelcomeScreenProps {
   onNavigate: (screen: 'upload' | 'learning') => void;
@@ -75,8 +76,8 @@ export default function WelcomeScreen({ onNavigate }: WelcomeScreenProps) {
                 
                 {/* Center 3D Cube Preview */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-32 h-32 bg-gradient-to-br from-coral via-orchid to-steel rounded-2xl flex items-center justify-center shadow-glass transform rotate-12 animate-float">
-                    <Box className="w-16 h-16 text-white" />
+                  <div className="w-40 h-40">
+                    <RotatingCube />
                   </div>
                 </div>
               </div>

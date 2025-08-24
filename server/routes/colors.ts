@@ -1,57 +1,47 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import OpenAI from "openai";
+import { Router } from 'express';
+import OpenAI from 'openai';
+
+const router = Router();
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
 });
 
+// Color mapping for cube colors
 const CUBE_COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'];
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-  });
-
-  // Color detection endpoint
-  app.post('/api/detect-colors', async (req, res) => {
-    try {
-      const { image, provider = 'openai' } = req.body;
-      
-      if (!image) {
-        return res.status(400).json({ error: 'No image provided' });
-      }
-
-      console.log(`🔍 Processing with ${provider}...`);
-      
-      let colors: string[];
-      
-      if (provider === 'openai') {
-        colors = await detectWithOpenAI(image);
-      } else if (provider === 'roboflow') {
-        colors = await detectWithRoboflow(image);
-      } else {
-        return res.status(400).json({ error: 'Invalid provider' });
-      }
-      
-      console.log(`✅ Detection complete: ${colors.join(', ')}`);
-      res.json({ colors, provider });
-      
-    } catch (error) {
-      console.error('❌ Color detection error:', error);
-      res.status(500).json({ 
-        error: 'Color detection failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+router.post('/detect-colors', async (req, res) => {
+  try {
+    const { image, provider = 'openai' } = req.body;
+    
+    if (!image) {
+      return res.status(400).json({ error: 'No image provided' });
     }
-  });
 
-  const httpServer = createServer(app);
-  return httpServer;
-}
+    console.log(`🔍 Processing with ${provider}...`);
+    
+    let colors: string[];
+    
+    if (provider === 'openai') {
+      colors = await detectWithOpenAI(image);
+    } else if (provider === 'roboflow') {
+      colors = await detectWithRoboflow(image);
+    } else {
+      return res.status(400).json({ error: 'Invalid provider' });
+    }
+    
+    console.log(`✅ Detection complete: ${colors.join(', ')}`);
+    res.json({ colors, provider });
+    
+  } catch (error) {
+    console.error('❌ Color detection error:', error);
+    res.status(500).json({ 
+      error: 'Color detection failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 async function detectWithOpenAI(imageData: string): Promise<string[]> {
   try {
@@ -183,3 +173,5 @@ function processRoboflowPredictions(result: any): string[] {
 
   return grid;
 }
+
+export default router;

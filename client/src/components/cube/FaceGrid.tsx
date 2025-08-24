@@ -42,7 +42,7 @@ export default function FaceGrid({
   };
 
   return (
-    <div className={`${sizeClasses[size]} grid grid-cols-3 ${gapClasses[size]} p-2 bg-gray-900 rounded-lg border-2 border-gray-800`}>
+    <div className={`${sizeClasses[size]} grid grid-cols-3 ${gapClasses[size]} p-4 glass-panel animate-fade-in`}>
       {colors.map((color, index) => (
         <button
           key={index}
@@ -50,18 +50,20 @@ export default function FaceGrid({
           className={`
             ${squareSizeClasses[size]} 
             ${getColorClass(color)} 
-            rounded-sm transition-all duration-200 border
+            rounded-xl transition-smooth border-2 border-white-20 shadow-glass relative overflow-hidden
             ${selectedSquare === index 
-              ? 'ring-4 ring-blue-500 ring-opacity-50 scale-110 z-10 relative' 
-              : 'hover:scale-105 hover:shadow-lg'
+              ? 'ring-3 ring-orchid ring-opacity-80 scale-110 z-10 shadow-glow border-orchid' 
+              : 'hover:scale-105 hover:shadow-glow hover:border-orchid animate-on-hover'
             }
             ${onColorClick ? 'cursor-pointer' : ''}
           `}
           disabled={!onColorClick}
         >
+          {/* Glossy effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl pointer-events-none" />
           {selectedSquare === index && (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-3 h-3 bg-orchid rounded-full animate-pulse-glow shadow-glow"></div>
             </div>
           )}
         </button>

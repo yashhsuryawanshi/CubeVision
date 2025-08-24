@@ -33,37 +33,80 @@ const COLOR_MAPPING: Record<string, string> = {
 
 export async function detectColorsFromImage(imageData: string): Promise<string[]> {
   try {
-    // Get API key from environment
-    const apiKey = process.env.ROBOFLOW_API_KEY || 'fallback_key';
-    const modelEndpoint = process.env.ROBOFLOW_MODEL_ENDPOINT || 'https://detect.roboflow.com/rubiks-cube-color-detection/1';
+    console.log('🔍 Starting color detection...');
     
-    // Convert base64 image to blob for upload
-    const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+    // First try OpenAI vision API for more reliable results
+    const openaiResult = await detectWithOpenAI(imageData);
+    if (openaiResult) {
+      console.log('✅ OpenAI detection successful');
+      return openaiResult;
+    }
     
-    const response = await fetch(`${modelEndpoint}?api_key=${apiKey}`, {
+    // Fallback to Roboflow if OpenAI fails
+    const roboflowResult = await detectWithRoboflow(imageData);
+    if (roboflowResult) {
+      console.log('✅ Roboflow detection successful');
+      return roboflowResult;
+    }
+    
+    throw new Error('Both AI services failed');
+    
+  } catch (error) {
+    console.error('🚫 Color detection failed:', error);
+    
+    // Fallback: perform basic color analysis
+    console.log('🔄 Using fallback color analysis...');
+    return performBasicColorAnalysis(imageData);
+  }
+}
+
+async function detectWithOpenAI(imageData: string): Promise<string[] | null> {
+  try {
+    const response = await fetch('/api/detect-colors', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: base64Data
+      body: JSON.stringify({ 
+        image: imageData,
+        provider: 'openai'
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`Roboflow API error: ${response.status} ${response.statusText}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const result: RoboflowResponse = await response.json();
-    
-    // Process the predictions and map to cube grid
-    const colors = processPredictions(result);
-    
-    return colors;
-    
+    const result = await response.json();
+    return result.colors;
   } catch (error) {
-    console.error('Color detection failed:', error);
-    
-    // Fallback: return default colors or perform basic color analysis
-    return performBasicColorAnalysis(imageData);
+    console.log('OpenAI detection failed:', error);
+    return null;
+  }
+}
+
+async function detectWithRoboflow(imageData: string): Promise<string[] | null> {
+  try {
+    const response = await fetch('/api/detect-colors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        image: imageData,
+        provider: 'roboflow'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Roboflow API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.colors;
+  } catch (error) {
+    console.log('Roboflow detection failed:', error);
+    return null;
   }
 }
 
