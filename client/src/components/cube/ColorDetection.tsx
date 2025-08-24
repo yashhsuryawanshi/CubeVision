@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
-import { detectColorsFromImage } from "../../lib/roboflow";
+import { validateCubeState } from "../../lib/roboflow";
 import ColorPalette from "./ColorPalette";
 import FaceGrid from "./FaceGrid";
 
@@ -24,48 +24,11 @@ const COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'] as const;
 export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) {
   const { faceImages, faceColors, setFaceColors } = useCube();
   const [selectedFace, setSelectedFace] = useState<string>('front');
-  const [processing, setProcessing] = useState(false);
-  const [processedFaces, setProcessedFaces] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showOriginal, setShowOriginal] = useState(false);
 
-  useEffect(() => {
-    // Auto-start processing when component mounts
-    if (Object.keys(faceImages).length > 0 && processedFaces.size === 0) {
-      processAllFaces();
-    }
-  }, []);
-
-  const processAllFaces = async () => {
-    setProcessing(true);
-    const faceIds = Object.keys(faceImages);
-    
-    for (const faceId of faceIds) {
-      try {
-        const imageDataUrl = faceImages[faceId as keyof typeof faceImages];
-        if (imageDataUrl) {
-          // Convert data URL to blob
-          const response = await fetch(imageDataUrl);
-          const blob = await response.blob();
-          
-          const colors = await detectColorsFromImage(imageDataUrl);
-          setFaceColors(faceId as any, colors);
-          setProcessedFaces(prev => new Set([...Array.from(prev), faceId]));
-          
-          // Small delay for better UX
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      } catch (error) {
-        console.error(`Error processing ${faceId}:`, error);
-        setErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
-        // Set fallback colors
-        setFaceColors(faceId as any, Array(9).fill('white'));
-        setProcessedFaces(prev => new Set([...Array.from(prev), faceId]));
-      }
-    }
-    
-    setProcessing(false);
-  };
+  // All faces are already processed in ImageUpload component
+  const processedFaces = new Set(Object.keys(faceColors));
 
   const handleColorChange = (face: string, squareIndex: number, color: string) => {
     const currentColors = faceColors[face as keyof typeof faceColors] || Array(9).fill('white');
@@ -83,26 +46,9 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
     }
   };
 
-  const validateCube = () => {
-    const colorCounts = COLORS.reduce((acc, color) => ({ ...acc, [color]: 0 }), {} as Record<string, number>);
-    
-    Object.values(faceColors).forEach(face => {
-      if (face) {
-        face.forEach(color => {
-          if (color in colorCounts) {
-            colorCounts[color]++;
-          }
-        });
-      }
-    });
-    
-    // Each color should appear exactly 9 times
-    return Object.values(colorCounts).every(count => count === 9);
-  };
-
-  const progress = (processedFaces.size / Object.keys(faceImages).length) * 100;
-  const allProcessed = processedFaces.size === Object.keys(faceImages).length && !processing;
-  const isValid = validateCube();
+  const validation = validateCubeState(faceColors);
+  const allProcessed = processedFaces.size === Object.keys(faceImages).length;
+  const isValid = validation.isValid;
 
   return (
     <div className="min-h-screen relative">
@@ -117,45 +63,24 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
               <span className="text-coral">CubeVision</span> Detection
             </h1>
             <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8 animate-slide-in">
-              AI-detected colors are shown below. Click any square to manually correct colors if needed.
+              Review and edit the AI-detected colors. Click any square to change its color if needed.
             </p>
-          
-            {processing && (
-              <div className="max-w-md mx-auto mb-6">
-                <div className="glass-panel p-4">
-                  <div className="w-full bg-white-10 rounded-full h-3 mb-3">
-                    <div 
-                      className="bg-orchid h-3 rounded-full transition-all duration-300" 
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-orchid" />
-                    <p className="text-sm text-white-80">
-                      Processing images with AI... {Math.round(progress)}%
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {allProcessed && (
-              <div className="glass-panel p-4 max-w-md mx-auto mb-6">
-                <div className="flex items-center justify-center space-x-2">
-                  {isValid ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 text-orchid" />
-                      <span className="text-white font-medium">Cube state is valid!</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-5 h-5 text-coral" />
-                      <span className="text-white font-medium">Please check color distribution</span>
-                    </>
-                  )}
-                </div>
+            <div className="glass-panel p-4 max-w-md mx-auto mb-6">
+              <div className="flex items-center justify-center space-x-2">
+                {isValid ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-orchid" />
+                    <span className="text-white font-medium">Cube state is valid!</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-5 h-5 text-coral" />
+                    <span className="text-white font-medium">Check color distribution - {validation.errors.join(', ')}</span>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Face Selection */}
@@ -230,12 +155,6 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
                       }}
                       selectedSquare={null}
                     />
-                    {processing && selectedFace && !processedFaces.has(selectedFace) && (
-                      <div className="mt-2 flex items-center justify-center space-x-2 text-orchid">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Processing...</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

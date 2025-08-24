@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight } from "lucide-react";
+import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
+import { detectColorsFromImage } from "../../lib/roboflow";
 
 interface ImageUploadProps {
   onNext: () => void;
@@ -18,15 +19,46 @@ const CUBE_FACES = [
 
 export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
   const [currentFace, setCurrentFace] = useState(0);
-  const { faceImages, setFaceImage } = useCube();
+  const [processingFaces, setProcessingFaces] = useState<Set<string>>(new Set());
+  const [processingErrors, setProcessingErrors] = useState<Record<string, string>>({});
+  const { faceImages, setFaceImage, faceColors, setFaceColors } = useCube();
   
+  const processImageColors = async (faceId: string, imageDataUrl: string) => {
+    setProcessingFaces(prev => new Set([...Array.from(prev), faceId]));
+    setProcessingErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[faceId];
+      return newErrors;
+    });
+
+    try {
+      const colors = await detectColorsFromImage(imageDataUrl);
+      setFaceColors(faceId as any, colors);
+    } catch (error) {
+      console.error(`Error processing ${faceId}:`, error);
+      setProcessingErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
+      // Set fallback colors
+      setFaceColors(faceId as any, Array(9).fill('white'));
+    } finally {
+      setProcessingFaces(prev => {
+        const newSet = new Set(Array.from(prev));
+        newSet.delete(faceId);
+        return newSet;
+      });
+    }
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result as string;
-        setFaceImage(CUBE_FACES[currentFace].id as any, result);
+        const faceId = CUBE_FACES[currentFace].id;
+        setFaceImage(faceId as any, result);
+        
+        // Process colors immediately
+        await processImageColors(faceId, result);
         
         // Auto-advance to next face
         if (currentFace < CUBE_FACES.length - 1) {
@@ -42,9 +74,13 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
     const file = event.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result as string;
-        setFaceImage(CUBE_FACES[currentFace].id as any, result);
+        const faceId = CUBE_FACES[currentFace].id;
+        setFaceImage(faceId as any, result);
+        
+        // Process colors immediately
+        await processImageColors(faceId, result);
         
         // Auto-advance to next face
         if (currentFace < CUBE_FACES.length - 1) {
@@ -59,8 +95,8 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
     event.preventDefault();
   };
 
-  const progress = (Object.keys(faceImages).length / CUBE_FACES.length) * 100;
-  const allImagesUploaded = Object.keys(faceImages).length === CUBE_FACES.length;
+  const progress = (Object.keys(faceColors).length / CUBE_FACES.length) * 100;
+  const allImagesProcessed = Object.keys(faceColors).length === CUBE_FACES.length;
 
   return (
     <div className="min-h-screen relative">
@@ -87,7 +123,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                   ></div>
                 </div>
                 <p className="text-sm text-white-80">
-                  {Object.keys(faceImages).length} of {CUBE_FACES.length} faces captured
+                  {Object.keys(faceColors).length} of {CUBE_FACES.length} faces processed
                 </p>
               </div>
             </div>
@@ -103,9 +139,19 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                   currentFace === index ? 'bg-orchid/20 border-orchid/30' : 'hover:bg-white-10'
                 }`}
               >
-                <div className={`w-4 h-4 rounded-sm border border-white-40 transition-smooth ${faceImages[face.id as keyof typeof faceImages] ? 'bg-orchid animate-pulse-glow' : 'bg-white-10'}`}></div>
+                <div className={`w-4 h-4 rounded-sm border border-white-40 transition-smooth ${
+                  processingFaces.has(face.id) ? 'bg-yellow-400' :
+                  faceColors[face.id as keyof typeof faceColors] ? 'bg-orchid animate-pulse-glow' : 
+                  faceImages[face.id as keyof typeof faceImages] ? 'bg-blue-400' : 'bg-white-10'
+                }`}></div>
                 <span className="text-white font-medium">{face.name}</span>
-                {faceImages[face.id as keyof typeof faceImages] && (
+                {processingFaces.has(face.id) && (
+                  <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                )}
+                {processingErrors[face.id] && (
+                  <AlertCircle className="w-4 h-4 text-coral animate-scale-in" />
+                )}
+                {faceColors[face.id as keyof typeof faceColors] && !processingFaces.has(face.id) && (
                   <Check className="w-4 h-4 text-orchid animate-scale-in" />
                 )}
               </button>
@@ -116,8 +162,15 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
             {/* Upload Area */}
             <div className="glass-panel p-6 animate-fade-in">
               <div className="flex items-center space-x-3 mb-6">
-                <div className={`w-6 h-6 rounded-lg border border-white-40 ${faceImages[CUBE_FACES[currentFace].id as keyof typeof faceImages] ? 'bg-orchid' : 'bg-white-10'}`}></div>
+                <div className={`w-6 h-6 rounded-lg border border-white-40 transition-smooth ${
+                  processingFaces.has(CUBE_FACES[currentFace].id) ? 'bg-yellow-400' :
+                  faceColors[CUBE_FACES[currentFace].id as keyof typeof faceColors] ? 'bg-orchid animate-pulse-glow' : 
+                  faceImages[CUBE_FACES[currentFace].id as keyof typeof faceImages] ? 'bg-blue-400' : 'bg-white-10'
+                }`}></div>
                 <h2 className="text-2xl font-bold text-white">{CUBE_FACES[currentFace].name} Face</h2>
+                {processingFaces.has(CUBE_FACES[currentFace].id) && (
+                  <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
+                )}
               </div>
 
               <div className="mb-6 p-4 bg-steel/20 rounded-2xl border border-steel/30">
@@ -192,9 +245,14 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
                       const file = (e.target as HTMLInputElement).files?.[0];
                       if (file) {
                         const reader = new FileReader();
-                        reader.onload = (e) => {
+                        reader.onload = async (e) => {
                           const result = e.target?.result as string;
-                          setFaceImage(CUBE_FACES[currentFace].id as any, result);
+                          const faceId = CUBE_FACES[currentFace].id;
+                          setFaceImage(faceId as any, result);
+                          
+                          // Process colors immediately
+                          await processImageColors(faceId, result);
+                          
                           if (currentFace < CUBE_FACES.length - 1) {
                             setTimeout(() => setCurrentFace(currentFace + 1), 500);
                           }
@@ -212,25 +270,56 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
               </div>
             </div>
 
-            {/* Preview Grid */}
+            {/* Preview Grid with Colors */}
             <div className="glass-panel p-6 animate-slide-in">
-              <h3 className="text-2xl font-bold text-white mb-6">Uploaded Faces</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">Detected Colors</h3>
               <div className="grid grid-cols-3 gap-4">
                 {CUBE_FACES.map((face) => (
-                  <div
-                    key={face.id}
-                    className="aspect-square border-2 border-white-20 rounded-2xl overflow-hidden bg-white-10/50 flex items-center justify-center"
-                  >
-                    {faceImages[face.id as keyof typeof faceImages] ? (
-                      <img
-                        src={faceImages[face.id as keyof typeof faceImages]}
-                        alt={`${face.name} face`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-sm mx-auto mb-2 border border-white-40 bg-white-10 opacity-50`}></div>
-                        <p className="text-xs text-white-80">{face.name}</p>
+                  <div key={face.id} className="text-center">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <div className={`w-3 h-3 rounded-sm border border-white-40 ${
+                        processingFaces.has(face.id) ? 'bg-yellow-400' :
+                        faceColors[face.id as keyof typeof faceColors] ? 'bg-orchid' : 
+                        faceImages[face.id as keyof typeof faceImages] ? 'bg-blue-400' : 'bg-white-10'
+                      }`}></div>
+                      <span className="text-sm font-medium text-white">{face.name}</span>
+                      {processingFaces.has(face.id) && (
+                        <Loader2 className="w-3 h-3 text-yellow-400 animate-spin" />
+                      )}
+                      {faceColors[face.id as keyof typeof faceColors] && !processingFaces.has(face.id) && (
+                        <Check className="w-3 h-3 text-orchid" />
+                      )}
+                      {processingErrors[face.id] && (
+                        <AlertCircle className="w-3 h-3 text-coral" />
+                      )}
+                    </div>
+                    
+                    {/* Color Grid */}
+                    <div className="grid grid-cols-3 gap-0.5 mb-2">
+                      {(faceColors[face.id as keyof typeof faceColors] || Array(9).fill('white')).map((color, i) => (
+                        <div
+                          key={i}
+                          className={`aspect-square rounded-sm ${
+                            color === 'white' ? 'bg-white border border-gray-300' :
+                            color === 'yellow' ? 'bg-yellow-400' :
+                            color === 'red' ? 'bg-red-500' :
+                            color === 'orange' ? 'bg-orange-500' :
+                            color === 'green' ? 'bg-green-500' :
+                            color === 'blue' ? 'bg-blue-500' :
+                            'bg-gray-400'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Image thumbnail */}
+                    {faceImages[face.id as keyof typeof faceImages] && (
+                      <div className="aspect-square border border-white-20 rounded-lg overflow-hidden bg-white-10/50 mt-2">
+                        <img
+                          src={faceImages[face.id as keyof typeof faceImages]}
+                          alt={`${face.name} face`}
+                          className="w-full h-full object-cover opacity-60"
+                        />
                       </div>
                     )}
                   </div>
@@ -251,10 +340,10 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
             
             <button 
               onClick={onNext} 
-              disabled={!allImagesUploaded}
-              className={`btn-primary px-6 py-3 flex items-center space-x-2 animate-on-hover ${!allImagesUploaded ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
+              disabled={!allImagesProcessed}
+              className={`btn-primary px-6 py-3 flex items-center space-x-2 animate-on-hover ${!allImagesProcessed ? 'opacity-50 cursor-not-allowed' : 'animate-pulse-glow'}`}
             >
-              <span>Process Images</span>
+              <span>Review & Edit</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

@@ -114,7 +114,9 @@ function performBasicColorAnalysis(imageData: string): Promise<string[]> {
           
           const imageData = ctx?.getImageData(x, y, 1, 1);
           if (imageData) {
-            const [r, g, b] = imageData.data;
+            const r = imageData.data[0];
+            const g = imageData.data[1];
+            const b = imageData.data[2];
             const detectedColor = classifyColor(r, g, b);
             colors.push(detectedColor);
           } else {
