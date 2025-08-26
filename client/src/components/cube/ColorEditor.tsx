@@ -47,33 +47,33 @@ export default function ColorEditor({
   const hasChanges = JSON.stringify(colors) !== JSON.stringify(detectedColors);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-app-gradient border border-white-20 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+      <div className="bg-app-gradient border border-white-20 rounded-2xl p-4 max-w-5xl w-full max-h-[95vh] overflow-y-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold text-white mb-1">
             Edit <span className="text-coral">{faceName}</span> Face Colors
           </h2>
-          <p className="text-white-80">
-            The AI detected these colors. Click any square to change its color if needed.
+          <p className="text-white-80 text-sm">
+            Click any square to change its color if AI detection is incorrect.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4">
           {/* Original Image */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Original Image</h3>
+              <h3 className="text-lg font-semibold text-white">Original Image</h3>
               <button
                 onClick={() => setShowOriginal(!showOriginal)}
-                className="glass-panel p-2 hover:bg-white-20 transition-smooth"
+                className="glass-panel p-1.5 hover:bg-white-20 transition-smooth"
               >
-                {showOriginal ? <EyeOff className="w-5 h-5 text-white" /> : <Eye className="w-5 h-5 text-white" />}
+                {showOriginal ? <EyeOff className="w-4 h-4 text-white" /> : <Eye className="w-4 h-4 text-white" />}
               </button>
             </div>
             
             {showOriginal && (
-              <div className="aspect-square bg-white-10 rounded-2xl overflow-hidden border border-white-20">
+              <div className="aspect-square bg-white-10 rounded-xl overflow-hidden border border-white-20">
                 <img
                   src={originalImage}
                   alt={`${faceName} face`}
@@ -83,17 +83,17 @@ export default function ColorEditor({
             )}
 
             {/* Status */}
-            <div className="glass-panel p-4">
+            <div className="glass-panel p-3">
               <div className="flex items-center justify-center space-x-2">
                 {hasChanges ? (
                   <>
-                    <AlertCircle className="w-5 h-5 text-coral" />
-                    <span className="text-white font-medium">Colors modified</span>
+                    <AlertCircle className="w-4 h-4 text-coral" />
+                    <span className="text-white text-sm font-medium">Modified</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-5 h-5 text-orchid" />
-                    <span className="text-white font-medium">AI detection accepted</span>
+                    <CheckCircle className="w-4 h-4 text-orchid" />
+                    <span className="text-white text-sm font-medium">AI Detected</span>
                   </>
                 )}
               </div>
@@ -101,83 +101,81 @@ export default function ColorEditor({
           </div>
 
           {/* Color Editor */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-4">Edit Colors</h3>
-              <div className="glass-panel p-6">
-                <FaceGrid
-                  colors={colors}
-                  onColorClick={handleSquareClick}
-                  selectedSquare={selectedSquare}
-                  size="lg"
-                />
-                
-                {selectedSquare !== null && (
-                  <div className="mt-4 p-3 bg-orchid/20 border border-orchid/30 rounded-lg">
-                    <p className="text-sm text-white mb-2">
-                      Selected: Square {selectedSquare + 1} (currently {colors[selectedSquare]})
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Color Palette */}
-            <div>
-              <h4 className="text-lg font-semibold text-white mb-3">Choose Color</h4>
-              <div className="glass-panel p-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {COLORS.map((colorOption) => (
-                    <button
-                      key={colorOption.name}
-                      onClick={() => handleColorSelect(colorOption.name)}
-                      disabled={selectedSquare === null}
-                      className={`${colorOption.bg} ${colorOption.border} border-2 rounded-lg p-3 transition-smooth hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center space-y-1 min-h-[60px] justify-center`}
-                    >
-                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: colorOption.color }}></div>
-                      <span className={`text-xs font-medium ${colorOption.name === 'white' ? 'text-gray-800' : 'text-white'}`}>
-                        {colorOption.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                
-                {selectedSquare === null && (
-                  <p className="text-sm text-white-60 text-center mt-3">
-                    Click a square above to select it for editing
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-white">Edit Colors</h3>
+            <div className="glass-panel p-4">
+              <FaceGrid
+                colors={colors}
+                onColorClick={handleSquareClick}
+                selectedSquare={selectedSquare}
+                size="md"
+              />
+              
+              {selectedSquare !== null && (
+                <div className="mt-3 p-2 bg-orchid/20 border border-orchid/30 rounded-lg">
+                  <p className="text-xs text-white">
+                    Selected: Square {selectedSquare + 1} ({colors[selectedSquare]})
                   </p>
-                )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Color Palette */}
+          <div className="space-y-3">
+            <h4 className="text-lg font-semibold text-white">Choose Color</h4>
+            <div className="glass-panel p-3">
+              <div className="grid grid-cols-2 gap-2">
+                {COLORS.map((colorOption) => (
+                  <button
+                    key={colorOption.name}
+                    onClick={() => handleColorSelect(colorOption.name)}
+                    disabled={selectedSquare === null}
+                    className={`${colorOption.bg} ${colorOption.border} border-2 rounded-lg p-2 transition-smooth hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center space-y-1 min-h-[50px] justify-center`}
+                  >
+                    <div className="w-5 h-5 rounded-full" style={{ backgroundColor: colorOption.color }}></div>
+                    <span className={`text-xs font-medium ${colorOption.name === 'white' ? 'text-gray-800' : 'text-white'}`}>
+                      {colorOption.name}
+                    </span>
+                  </button>
+                ))}
               </div>
+              
+              {selectedSquare === null && (
+                <p className="text-xs text-white-60 text-center mt-2">
+                  Click a square to edit
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex justify-between items-center mt-8 pt-6 border-t border-white-20">
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-white-20">
           <button
             onClick={onCancel}
-            className="btn-outline px-6 py-3 flex items-center space-x-2"
+            className="btn-outline px-4 py-2 flex items-center space-x-2"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
             <span>Cancel</span>
           </button>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {hasChanges && (
               <button
                 onClick={() => setColors([...detectedColors])}
-                className="glass-panel px-4 py-2 hover:bg-white-20 transition-smooth flex items-center space-x-2"
+                className="glass-panel px-3 py-2 hover:bg-white-20 transition-smooth flex items-center space-x-1"
               >
-                <RotateCw className="w-4 h-4 text-white" />
+                <RotateCw className="w-3 h-3 text-white" />
                 <span className="text-white text-sm">Reset</span>
               </button>
             )}
             
             <button
               onClick={() => onSave(colors)}
-              className="btn-primary px-6 py-3 flex items-center space-x-2 animate-pulse-glow"
+              className="btn-primary px-5 py-2 flex items-center space-x-2"
             >
-              <Check className="w-5 h-5" />
+              <Check className="w-4 h-4" />
               <span>Save & Continue</span>
             </button>
           </div>

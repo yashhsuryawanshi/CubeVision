@@ -3,7 +3,6 @@ import OpenAI from 'openai';
 
 const router = Router();
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
 });
@@ -46,7 +45,7 @@ router.post('/detect-colors', async (req, res) => {
 async function detectWithOpenAI(imageData: string): Promise<string[]> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      model: "gpt-4-turbo",
       messages: [
         {
           role: "system",
@@ -143,34 +142,45 @@ function processRoboflowPredictions(result: any): string[] {
     return grid;
   }
   
-  // Color mapping from Roboflow classes
+  // Color mapping from Roboflow classes - handle single letters and full names
   const colorMapping: Record<string, string> = {
-    'white': 'white',
-    'yellow': 'yellow', 
-    'red': 'red',
-    'orange': 'orange',
-    'green': 'green',
-    'blue': 'blue'
+    'w': 'white', 'white': 'white',
+    'y': 'yellow', 'yellow': 'yellow',
+    'r': 'red', 'red': 'red',
+    'o': 'orange', 'orange': 'orange', 
+    'g': 'green', 'green': 'green',
+    'b': 'blue', 'blue': 'blue'
   };
   
-  // Sort predictions by position to map to grid
-  const predictions = result.predictions
-    .filter((pred: any) => pred.confidence > 0.3)
+  console.log(`🔍 Processing ${result.predictions.length} predictions`);
+  
+  // Filter and improve predictions
+  const validPredictions = result.predictions
+    .filter((pred: any) => {
+      const hasValidClass = pred.class && (pred.class in colorMapping);
+      const hasGoodConfidence = pred.confidence > 0.4; // Increased threshold for better accuracy
+      const isReasonableSize = pred.width > 20 && pred.height > 20; // Filter out tiny detections
+      return hasValidClass && hasGoodConfidence && isReasonableSize;
+    })
     .sort((a: any, b: any) => {
-      // Sort by Y position first (top to bottom), then X position (left to right)
+      // Improved sorting: create a more robust grid mapping
       const yDiff = a.y - b.y;
-      if (Math.abs(yDiff) > 50) return yDiff;
+      if (Math.abs(yDiff) > 60) return yDiff; // Increased threshold for row separation
       return a.x - b.x;
     });
 
-  // Map predictions to grid positions
-  predictions.forEach((pred: any, index: number) => {
+  console.log(`🔍 Valid predictions after filtering: ${validPredictions.length}`);
+
+  // Map predictions to grid positions with better spatial logic
+  validPredictions.forEach((pred: any, index: number) => {
     if (index < 9) {
       const detectedColor = colorMapping[pred.class?.toLowerCase()] || 'white';
       grid[index] = detectedColor;
+      console.log(`📍 Grid[${index}]: ${pred.class} -> ${detectedColor} (confidence: ${pred.confidence})`);
     }
   });
 
+  console.log(`✅ Final grid: ${grid.join(', ')}`);
   return grid;
 }
 
