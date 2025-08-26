@@ -3,6 +3,7 @@ import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight, Loader2, AlertC
 import { useCube } from "../../lib/stores/useCube";
 import { detectColorsFromImage } from "../../lib/roboflow";
 import ImageCropper from "../ImageCropper";
+import ColorEditor from "./ColorEditor";
 
 interface ImageUploadProps {
   onNext: () => void;
@@ -24,6 +25,13 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
   const [processingErrors, setProcessingErrors] = useState<Record<string, string>>({});
   const [showCropper, setShowCropper] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [showColorEditor, setShowColorEditor] = useState(false);
+  const [editorData, setEditorData] = useState<{
+    faceId: string;
+    faceName: string;
+    image: string;
+    detectedColors: string[];
+  } | null>(null);
   const { faceImages, setFaceImage, faceColors, setFaceColors } = useCube();
   
   const processImageColors = async (faceId: string, imageDataUrl: string) => {
@@ -36,11 +44,21 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
 
     try {
       const colors = await detectColorsFromImage(imageDataUrl);
-      setFaceColors(faceId as any, colors);
+      
+      // Show color editor for user to verify/edit colors
+      const faceName = CUBE_FACES.find(f => f.id === faceId)?.name || faceId;
+      setEditorData({
+        faceId,
+        faceName,
+        image: imageDataUrl,
+        detectedColors: colors
+      });
+      setShowColorEditor(true);
+      
     } catch (error) {
       console.error(`Error processing ${faceId}:`, error);
       setProcessingErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
-      // Set fallback colors
+      // Set fallback colors and proceed
       setFaceColors(faceId as any, Array(9).fill('white'));
     } finally {
       setProcessingFaces(prev => {
@@ -70,13 +88,8 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
     setShowCropper(false);
     setPendingImage(null);
     
-    // Process colors immediately
+    // Process colors immediately (will trigger color editor)
     await processImageColors(faceId, croppedImageUrl);
-    
-    // Auto-advance to next face
-    if (currentFace < CUBE_FACES.length - 1) {
-      setTimeout(() => setCurrentFace(currentFace + 1), 500);
-    }
   };
 
   const handleCropCancel = () => {
@@ -100,6 +113,33 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+  };
+
+  const handleColorEditorSave = (colors: string[]) => {
+    if (editorData) {
+      setFaceColors(editorData.faceId as any, colors);
+      setShowColorEditor(false);
+      setEditorData(null);
+      
+      // Auto-advance to next face after saving
+      if (currentFace < CUBE_FACES.length - 1) {
+        setTimeout(() => setCurrentFace(currentFace + 1), 500);
+      }
+    }
+  };
+
+  const handleColorEditorCancel = () => {
+    if (editorData) {
+      // Use detected colors as fallback
+      setFaceColors(editorData.faceId as any, editorData.detectedColors);
+      setShowColorEditor(false);
+      setEditorData(null);
+      
+      // Auto-advance to next face after canceling
+      if (currentFace < CUBE_FACES.length - 1) {
+        setTimeout(() => setCurrentFace(currentFace + 1), 500);
+      }
+    }
   };
 
   const progress = (Object.keys(faceColors).length / CUBE_FACES.length) * 100;
@@ -356,6 +396,18 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
           imageUrl={pendingImage}
           onCrop={handleCropComplete}
           onCancel={handleCropCancel}
+        />
+      )}
+
+      {/* Color Editor Modal */}
+      {showColorEditor && editorData && (
+        <ColorEditor
+          faceId={editorData.faceId}
+          faceName={editorData.faceName}
+          originalImage={editorData.image}
+          detectedColors={editorData.detectedColors}
+          onSave={handleColorEditorSave}
+          onCancel={handleColorEditorCancel}
         />
       )}
     </div>
