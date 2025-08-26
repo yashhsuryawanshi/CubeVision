@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Upload, Camera, RotateCw, Check, ArrowLeft, ArrowRight, Loader2, AlertCircle, Crop } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
 import { detectColorsFromImage } from "../../lib/roboflow";
+import ImageCropper from "../ImageCropper";
 
 interface ImageUploadProps {
   onNext: () => void;
@@ -21,6 +22,8 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
   const [currentFace, setCurrentFace] = useState(0);
   const [processingFaces, setProcessingFaces] = useState<Set<string>>(new Set());
   const [processingErrors, setProcessingErrors] = useState<Record<string, string>>({});
+  const [showCropper, setShowCropper] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const { faceImages, setFaceImage, faceColors, setFaceColors } = useCube();
   
   const processImageColors = async (faceId: string, imageDataUrl: string) => {
@@ -48,48 +51,48 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const result = e.target?.result as string;
-        const faceId = CUBE_FACES[currentFace].id;
-        
-        // Store the image directly without cropping
-        setFaceImage(faceId as any, result);
-        
-        // Process colors immediately
-        await processImageColors(faceId, result);
-        
-        // Auto-advance to next face
-        if (currentFace < CUBE_FACES.length - 1) {
-          setTimeout(() => setCurrentFace(currentFace + 1), 500);
-        }
+        setPendingImage(result);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    const faceId = CUBE_FACES[currentFace].id;
+    setFaceImage(faceId as any, croppedImageUrl);
+    setShowCropper(false);
+    setPendingImage(null);
+    
+    // Process colors immediately
+    await processImageColors(faceId, croppedImageUrl);
+    
+    // Auto-advance to next face
+    if (currentFace < CUBE_FACES.length - 1) {
+      setTimeout(() => setCurrentFace(currentFace + 1), 500);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setPendingImage(null);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         const result = e.target?.result as string;
-        const faceId = CUBE_FACES[currentFace].id;
-        
-        // Store the image directly without cropping
-        setFaceImage(faceId as any, result);
-        
-        // Process colors immediately
-        await processImageColors(faceId, result);
-        
-        // Auto-advance to next face
-        if (currentFace < CUBE_FACES.length - 1) {
-          setTimeout(() => setCurrentFace(currentFace + 1), 500);
-        }
+        setPendingImage(result);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
@@ -347,7 +350,14 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
         </div>
       </div>
       
-
+      {/* Image Cropper Modal */}
+      {showCropper && pendingImage && (
+        <ImageCropper
+          imageUrl={pendingImage}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 }
