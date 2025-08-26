@@ -51,7 +51,9 @@ async function detectWithRoboflow(imageData: string): Promise<string[]> {
     console.log('🔍 Using real Roboflow API for color detection...');
     
     // Convert base64 to proper format for Roboflow serverless API
-    const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+    const base64Data = imageData.includes('base64,') 
+      ? imageData.split('base64,')[1] 
+      : imageData;
     
     // Use the serverless endpoint with proper format
     const response = await fetch(`https://serverless.roboflow.com/rubiks-cube-colors/1?api_key=${apiKey}`, {
