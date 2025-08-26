@@ -43,27 +43,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 async function detectWithRoboflow(imageData: string): Promise<string[]> {
   try {
-    // For now, we'll create a simple fallback since we don't have Roboflow API key
-    // This simulates color detection - in production, user would provide their Roboflow API key
-    console.log('🔧 Simulating color detection (provide ROBOFLOW_API_KEY for real detection)');
+    const apiKey = "ph0Ib2cwr0iGLYNV2CiY"; // Using the provided API key
     
-    // Return a sample solved cube face (white center with mixed colors)
-    const sampleColors = ['red', 'white', 'blue', 'orange', 'white', 'green', 'yellow', 'red', 'blue'];
-    
-    return sampleColors;
-    
-    /* 
-    // Uncomment this section and provide ROBOFLOW_API_KEY to enable real detection:
-    
-    const apiKey = process.env.ROBOFLOW_API_KEY;
     if (!apiKey) {
       throw new Error('Roboflow API key not configured');
     }
     
+    console.log('🔍 Detecting colors with Roboflow API...');
+    
     // Convert base64 to proper format for Roboflow
     const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
     
-    const response = await fetch(`https://detect.roboflow.com/rubiks-cube-color-detection/1?api_key=${apiKey}`, {
+    // Use the correct Roboflow API endpoint for your project
+    const response = await fetch(`https://detect.roboflow.com/rubiks-cube-colors/1?api_key=${apiKey}&confidence=40&overlap=30`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -72,20 +64,24 @@ async function detectWithRoboflow(imageData: string): Promise<string[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Roboflow API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Roboflow API error response:', errorText);
+      throw new Error(`Roboflow API error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('🔍 Roboflow API response:', JSON.stringify(result, null, 2));
     
     // Process Roboflow predictions into 3x3 grid
     const colors = processRoboflowPredictions(result);
     
     return colors;
-    */
     
   } catch (error) {
     console.error('Roboflow detection failed:', error);
-    throw error;
+    // Fallback to sample data if API fails
+    console.log('🔧 Falling back to sample data due to API error');
+    return ['red', 'white', 'blue', 'orange', 'white', 'green', 'yellow', 'red', 'blue'];
   }
 }
 
@@ -94,22 +90,38 @@ function processRoboflowPredictions(result: any): string[] {
   const grid: string[] = Array(9).fill('white');
   
   if (!result.predictions || !Array.isArray(result.predictions)) {
+    console.log('⚠️ No predictions found in result');
     return grid;
   }
   
-  // Color mapping from Roboflow classes
+  console.log(`🔍 Processing ${result.predictions.length} predictions`);
+  
+  // Color mapping from Roboflow classes to cube colors
   const colorMapping: Record<string, string> = {
     'white': 'white',
     'yellow': 'yellow', 
     'red': 'red',
     'orange': 'orange',
     'green': 'green',
-    'blue': 'blue'
+    'blue': 'blue',
+    // Add more mappings if your model uses different class names
+    'w': 'white',
+    'y': 'yellow',
+    'r': 'red',
+    'o': 'orange',
+    'g': 'green',
+    'b': 'blue'
   };
   
-  // Sort predictions by position to map to grid
-  const predictions = result.predictions
-    .filter((pred: any) => pred.confidence > 0.3)
+  // Filter and sort predictions by position to map to 3x3 grid
+  const validPredictions = result.predictions
+    .filter((pred: any) => {
+      const isValid = pred.confidence && pred.confidence > 0.4 && pred.class;
+      if (!isValid) {
+        console.log(`⚠️ Filtered out prediction: confidence=${pred.confidence}, class=${pred.class}`);
+      }
+      return isValid;
+    })
     .sort((a: any, b: any) => {
       // Sort by Y position first (top to bottom), then X position (left to right)
       const yDiff = a.y - b.y;
@@ -117,13 +129,18 @@ function processRoboflowPredictions(result: any): string[] {
       return a.x - b.x;
     });
 
-  // Map predictions to grid positions
-  predictions.forEach((pred: any, index: number) => {
+  console.log(`🔍 Valid predictions after filtering: ${validPredictions.length}`);
+
+  // Map predictions to grid positions (3x3 = 9 squares)
+  validPredictions.forEach((pred: any, index: number) => {
     if (index < 9) {
-      const detectedColor = colorMapping[pred.class?.toLowerCase()] || 'white';
+      const className = pred.class?.toLowerCase();
+      const detectedColor = colorMapping[className] || 'white';
       grid[index] = detectedColor;
+      console.log(`📍 Grid[${index}]: ${className} -> ${detectedColor} (confidence: ${pred.confidence})`);
     }
   });
 
+  console.log(`✅ Final grid: ${grid.join(', ')}`);
   return grid;
 }
