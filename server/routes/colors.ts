@@ -135,10 +135,12 @@ async function detectWithRoboflow(imageData: string): Promise<string[]> {
 }
 
 function processRoboflowPredictions(result: any): string[] {
-  // Initialize 3x3 grid with default colors
+  // Initialize 3x3 grid with default colors and confidence tracking
   const grid: string[] = Array(9).fill('white');
+  const gridConfidence: number[] = Array(9).fill(0);
   
   if (!result.predictions || !Array.isArray(result.predictions)) {
+    console.log('❌ No valid predictions found');
     return grid;
   }
   
@@ -153,34 +155,62 @@ function processRoboflowPredictions(result: any): string[] {
   };
   
   console.log(`🔍 Processing ${result.predictions.length} predictions`);
+  console.log(`🖼️ Image dimensions: ${result.image?.width}x${result.image?.height}`);
   
-  // Filter and improve predictions
+  // Filter predictions with good confidence and valid classes
   const validPredictions = result.predictions
     .filter((pred: any) => {
-      const hasValidClass = pred.class && (pred.class in colorMapping);
-      const hasGoodConfidence = pred.confidence > 0.4; // Increased threshold for better accuracy
-      const isReasonableSize = pred.width > 20 && pred.height > 20; // Filter out tiny detections
-      return hasValidClass && hasGoodConfidence && isReasonableSize;
-    })
-    .sort((a: any, b: any) => {
-      // Improved sorting: create a more robust grid mapping
-      const yDiff = a.y - b.y;
-      if (Math.abs(yDiff) > 60) return yDiff; // Increased threshold for row separation
-      return a.x - b.x;
+      const hasValidClass = pred.class && (pred.class.toLowerCase() in colorMapping);
+      const hasGoodConfidence = pred.confidence > 0.3;
+      const hasValidCoordinates = pred.x && pred.y && pred.x > 0 && pred.y > 0;
+      return hasValidClass && hasGoodConfidence && hasValidCoordinates;
     });
 
   console.log(`🔍 Valid predictions after filtering: ${validPredictions.length}`);
 
-  // Map predictions to grid positions with better spatial logic
-  validPredictions.forEach((pred: any, index: number) => {
-    if (index < 9) {
-      const detectedColor = colorMapping[pred.class?.toLowerCase()] || 'white';
-      grid[index] = detectedColor;
-      console.log(`📍 Grid[${index}]: ${pred.class} -> ${detectedColor} (confidence: ${pred.confidence})`);
+  // Get image dimensions for proper grid mapping
+  const imgWidth = result.image?.width || 400;
+  const imgHeight = result.image?.height || 400;
+
+  // Sort by confidence (highest first) to prioritize better detections
+  validPredictions.sort((a: any, b: any) => b.confidence - a.confidence);
+
+  // Map each prediction to its correct grid position based on coordinates
+  validPredictions.forEach((pred: any) => {
+    const detectedColor = colorMapping[pred.class?.toLowerCase()] || 'white';
+    
+    // Calculate which grid cell this prediction belongs to
+    // Convert x,y coordinates to grid position (0-8)
+    const col = Math.floor((pred.x / imgWidth) * 3); // 0, 1, or 2
+    const row = Math.floor((pred.y / imgHeight) * 3); // 0, 1, or 2
+    
+    // Ensure we stay within bounds
+    const gridCol = Math.max(0, Math.min(2, col));
+    const gridRow = Math.max(0, Math.min(2, row));
+    
+    // Convert row,col to grid index (0-8)
+    // Grid layout: 0 1 2
+    //              3 4 5  
+    //              6 7 8
+    const gridIndex = gridRow * 3 + gridCol;
+    
+    // Only update if this is higher confidence than existing prediction for this position
+    if (gridIndex >= 0 && gridIndex < 9 && pred.confidence > gridConfidence[gridIndex]) {
+      grid[gridIndex] = detectedColor;
+      gridConfidence[gridIndex] = pred.confidence;
+      console.log(`📍 Grid[${gridIndex}] (row:${gridRow}, col:${gridCol}): ${pred.class} -> ${detectedColor} (confidence: ${pred.confidence.toFixed(3)}) at (${Math.round(pred.x)}, ${Math.round(pred.y)})`);
     }
   });
 
   console.log(`✅ Final grid: ${grid.join(', ')}`);
+  
+  // Log the grid layout for debugging
+  console.log('🎯 Grid layout:');
+  for (let row = 0; row < 3; row++) {
+    const rowColors = grid.slice(row * 3, row * 3 + 3);
+    console.log(`   ${rowColors.join(' | ')}`);
+  }
+  
   return grid;
 }
 

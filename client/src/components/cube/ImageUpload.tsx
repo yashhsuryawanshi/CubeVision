@@ -43,7 +43,28 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
     });
 
     try {
-      const colors = await detectColorsFromImage(imageDataUrl);
+      console.log(`🔍 Starting color detection for ${faceId} face...`);
+      
+      // Use server-side detection directly for better accuracy and consistent mapping
+      const response = await fetch('/api/detect-colors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          image: imageDataUrl,
+          provider: 'roboflow' // Force Roboflow for consistent accurate results
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const colors = result.colors;
+      
+      console.log(`✅ Detected colors for ${faceId}:`, colors);
       
       // Show color editor for user to verify/edit colors
       const faceName = CUBE_FACES.find(f => f.id === faceId)?.name || faceId;
@@ -56,7 +77,7 @@ export default function ImageUpload({ onNext, onBack }: ImageUploadProps) {
       setShowColorEditor(true);
       
     } catch (error) {
-      console.error(`Error processing ${faceId}:`, error);
+      console.error(`❌ Error processing ${faceId}:`, error);
       setProcessingErrors(prev => ({ ...prev, [faceId]: 'Failed to detect colors' }));
       // Set fallback colors and proceed
       setFaceColors(faceId as any, Array(9).fill('white'));
