@@ -12,19 +12,19 @@ export default function FaceGrid({
   size = 'md' 
 }: FaceGridProps) {
   const sizeClasses = {
-    sm: 'w-16 h-16',
+    sm: 'w-20 h-20',
     md: 'w-32 h-32',
     lg: 'w-48 h-48'
   };
 
   const squareSizeClasses = {
-    sm: 'w-4 h-4',
+    sm: 'w-5 h-5',
     md: 'w-8 h-8', 
     lg: 'w-12 h-12'
   };
 
   const gapClasses = {
-    sm: 'gap-0.5',
+    sm: 'gap-1',
     md: 'gap-1',
     lg: 'gap-1.5'
   };
@@ -42,7 +42,7 @@ export default function FaceGrid({
   };
 
   return (
-    <div className={`${sizeClasses[size]} grid grid-cols-3 ${gapClasses[size]} p-4 glass-panel animate-fade-in`}>
+    <div className={`${sizeClasses[size]} grid grid-cols-3 ${gapClasses[size]} ${size === 'sm' ? 'p-2' : 'p-4'} glass-panel animate-fade-in mx-auto`}>
       {colors.map((color, index) => (
         <button
           key={index}
@@ -50,20 +50,19 @@ export default function FaceGrid({
           className={`
             ${squareSizeClasses[size]} 
             ${getColorClass(color)} 
-            rounded-xl transition-smooth border-2 border-white-20 shadow-glass relative overflow-hidden
+            rounded-lg transition-smooth border border-white-30 shadow-glass relative overflow-hidden
             ${selectedSquare === index 
-              ? 'ring-3 ring-orchid ring-opacity-80 scale-110 z-10 shadow-glow border-orchid' 
-              : 'hover:scale-105 hover:shadow-glow hover:border-orchid animate-on-hover'
+              ? 'ring-2 ring-orchid ring-opacity-80 scale-110 z-10 shadow-glow border-orchid' 
+              : onColorClick ? 'hover:scale-105 hover:shadow-glow hover:border-orchid animate-on-hover cursor-pointer' : ''
             }
-            ${onColorClick ? 'cursor-pointer' : ''}
           `}
           disabled={!onColorClick}
         >
           {/* Glossy effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-lg pointer-events-none" />
           {selectedSquare === index && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-3 h-3 bg-orchid rounded-full animate-pulse-glow shadow-glow"></div>
+              <div className="w-2 h-2 bg-orchid rounded-full animate-pulse-glow shadow-glow"></div>
             </div>
           )}
         </button>

@@ -162,34 +162,22 @@ export default function ColorDetection({ onNext, onBack }: ColorDetectionProps) 
               {/* All Faces Preview */}
               <div className="glass-panel p-6 animate-slide-in">
                 <h3 className="text-2xl font-bold text-white mb-6">All Faces</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   {CUBE_FACES.map((face) => (
                     <div key={face.id} className="text-center">
-                      <div className="flex items-center justify-center space-x-2 mb-2">
-                        <div className={`w-3 h-3 rounded-sm border border-white-40 ${processedFaces.has(face.id) ? 'bg-orchid' : 'bg-white-10'}`}></div>
+                      <div className="flex items-center justify-center space-x-2 mb-3">
+                        <div className={`w-3 h-3 rounded-sm border border-white-40 transition-smooth ${processedFaces.has(face.id) ? 'bg-orchid animate-pulse-glow' : 'bg-white-10'}`}></div>
                         <span className="text-sm font-medium text-white">{face.name}</span>
                         {processedFaces.has(face.id) ? (
-                          <CheckCircle className="w-4 h-4 text-orchid" />
+                          <CheckCircle className="w-4 h-4 text-orchid animate-scale-in" />
                         ) : (
                           <div className="w-4 h-4 rounded-full border border-white-40"></div>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-0.5">
-                        {(faceColors[face.id as keyof typeof faceColors] || Array(9).fill('white')).map((color, i) => (
-                          <div
-                            key={i}
-                            className={`aspect-square rounded-sm ${
-                              color === 'white' ? 'bg-white border border-gray-300' :
-                              color === 'yellow' ? 'bg-yellow-400' :
-                              color === 'red' ? 'bg-red-500' :
-                              color === 'orange' ? 'bg-orange-500' :
-                              color === 'green' ? 'bg-green-500' :
-                              color === 'blue' ? 'bg-blue-500' :
-                              'bg-gray-400'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      <FaceGrid
+                        colors={faceColors[face.id as keyof typeof faceColors] || Array(9).fill('white')}
+                        size="sm"
+                      />
                     </div>
                   ))}
                 </div>
