@@ -35,21 +35,24 @@ export async function detectColorsFromImage(imageData: string): Promise<string[]
   try {
     console.log('🔍 Starting color detection...');
     
-    // First try OpenAI vision API for more reliable results
-    const openaiResult = await detectWithOpenAI(imageData);
-    if (openaiResult) {
-      console.log('✅ OpenAI detection successful');
-      return openaiResult;
+    // Use Roboflow API directly
+    const response = await fetch('/api/detect-colors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        image: imageData
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
-    
-    // Fallback to Roboflow if OpenAI fails
-    const roboflowResult = await detectWithRoboflow(imageData);
-    if (roboflowResult) {
-      console.log('✅ Roboflow detection successful');
-      return roboflowResult;
-    }
-    
-    throw new Error('Both AI services failed');
+
+    const result = await response.json();
+    console.log('✅ Color detection successful:', result.colors);
+    return result.colors;
     
   } catch (error) {
     console.error('🚫 Color detection failed:', error);
@@ -60,55 +63,7 @@ export async function detectColorsFromImage(imageData: string): Promise<string[]
   }
 }
 
-async function detectWithOpenAI(imageData: string): Promise<string[] | null> {
-  try {
-    const response = await fetch('/api/detect-colors', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        image: imageData,
-        provider: 'openai'
-      })
-    });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.colors;
-  } catch (error) {
-    console.log('OpenAI detection failed:', error);
-    return null;
-  }
-}
-
-async function detectWithRoboflow(imageData: string): Promise<string[] | null> {
-  try {
-    const response = await fetch('/api/detect-colors', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        image: imageData,
-        provider: 'roboflow'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Roboflow API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.colors;
-  } catch (error) {
-    console.log('Roboflow detection failed:', error);
-    return null;
-  }
-}
 
 function processPredictions(result: RoboflowResponse): string[] {
   // Initialize 3x3 grid with default colors
