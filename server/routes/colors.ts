@@ -181,24 +181,31 @@ function processRoboflowPredictions(result: any): string[] {
     
     // Calculate which grid cell this prediction belongs to
     // Convert x,y coordinates to grid position (0-8)
-    const col = Math.floor((pred.x / imgWidth) * 3); // 0, 1, or 2
-    const row = Math.floor((pred.y / imgHeight) * 3); // 0, 1, or 2
+    // Use the center coordinates of the prediction
+    const normalizedX = pred.x / imgWidth;  // 0 to 1
+    const normalizedY = pred.y / imgHeight; // 0 to 1
     
-    // Ensure we stay within bounds
-    const gridCol = Math.max(0, Math.min(2, col));
-    const gridRow = Math.max(0, Math.min(2, row));
+    // Map to 3x3 grid with better precision
+    let col, row;
+    if (normalizedX <= 0.33) col = 0;
+    else if (normalizedX <= 0.67) col = 1;
+    else col = 2;
+    
+    if (normalizedY <= 0.33) row = 0;
+    else if (normalizedY <= 0.67) row = 1;
+    else row = 2;
     
     // Convert row,col to grid index (0-8)
     // Grid layout: 0 1 2
     //              3 4 5  
     //              6 7 8
-    const gridIndex = gridRow * 3 + gridCol;
+    const gridIndex = row * 3 + col;
     
     // Only update if this is higher confidence than existing prediction for this position
     if (gridIndex >= 0 && gridIndex < 9 && pred.confidence > gridConfidence[gridIndex]) {
       grid[gridIndex] = detectedColor;
       gridConfidence[gridIndex] = pred.confidence;
-      console.log(`📍 Grid[${gridIndex}] (row:${gridRow}, col:${gridCol}): ${pred.class} -> ${detectedColor} (confidence: ${pred.confidence.toFixed(3)}) at (${Math.round(pred.x)}, ${Math.round(pred.y)})`);
+      console.log(`📍 Grid[${gridIndex}] (row:${row}, col:${col}): ${pred.class} -> ${detectedColor} (confidence: ${pred.confidence}) at (${Math.round(pred.x)}, ${Math.round(pred.y)})`);
     }
   });
 

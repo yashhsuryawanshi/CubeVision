@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Play, Pause, SkipForward, SkipBack, RotateCcw, Settings, BookOpen } from "lucide-react";
-import { Solution, SolutionStep } from "../../lib/solvers/Solver";
+import { Solution, SolutionStep } from "../../lib/solvers/RealCubeSolver";
 import { Move } from "../../lib/cubeUtils";
 
 interface LearningPanelProps {

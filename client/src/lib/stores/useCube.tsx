@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Solution } from "../solvers/Solver";
+import { Solution } from "../solvers/RealCubeSolver";
 import { Move } from "../cubeUtils";
 
 export interface CubeFace {

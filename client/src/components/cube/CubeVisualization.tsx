@@ -3,9 +3,9 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
 import { ArrowLeft, Maximize, RotateCcw, Play } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
-import CubeAnimator from "./CubeAnimator";
+import Cube3D from "./Cube3D";
 import LearningPanel from "./LearningPanel";
-import { getSolution } from "../../lib/solvers/Solver";
+import { getSolution } from "../../lib/solvers/RealCubeSolver";
 import * as THREE from "three";
 
 interface CubeVisualizationProps {
@@ -214,7 +214,7 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
                     />
                     
                     <Suspense fallback={null}>
-                      <CubeAnimator 
+                      <Cube3D 
                         faceColors={faceColors}
                         currentMove={getCurrentMove()}
                         isAnimating={isAnimating}
