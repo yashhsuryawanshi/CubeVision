@@ -6,6 +6,7 @@ import { useCube } from "../../lib/stores/useCube";
 import Cube3D from "./Cube3D";
 import LearningPanel from "./LearningPanel";
 import { getSolution } from "../../lib/solvers/RealCubeSolver";
+import { CubeStateManager } from "../../lib/cubeStateManager";
 import * as THREE from "three";
 
 interface CubeVisualizationProps {
@@ -157,7 +158,8 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
   };
 
   const handleSpeedChange = (speed: number) => {
-    setAnimationSpeed(speed);
+    // Slower default speed for better learning experience
+    setAnimationSpeed(Math.max(0.3, speed * 0.6));
   };
 
   return (
@@ -168,18 +170,18 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
       <div className="relative z-10 min-h-screen px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 pt-8">
-            <h1 className="text-display-sm text-white font-extrabold tracking-tight mb-6">
-              Your 3D Cube
+          <div className="text-center mb-8">
+            <h1 className="text-4xl text-white font-bold tracking-tight mb-3">
+              {showSolvingInterface ? 'Learning to Solve' : 'Your 3D Cube'}
             </h1>
-            <p className="text-xl text-white-80 max-w-2xl mx-auto leading-relaxed mb-8">
-              Interact with your cube - rotate, zoom, and explore every angle
+            <p className="text-lg text-white-80 max-w-xl mx-auto">
+              {showSolvingInterface ? 'Follow along step by step' : 'Interactive 3D cube visualization'}
             </p>
           </div>
 
-          <div className={`grid gap-8 ${showSolvingInterface ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+          <div className={`${showSolvingInterface ? 'grid lg:grid-cols-3 gap-6' : 'flex flex-col'}`}>
             {/* 3D Viewer */}
-            <div className={showSolvingInterface ? 'lg:col-span-3' : 'lg:col-span-3'}>
+            <div className={showSolvingInterface ? 'lg:col-span-2' : 'w-full'}>
               <div className="glass-panel overflow-hidden">
                 <div className="p-6 pb-4">
                   <div className="flex items-center justify-between">
@@ -197,7 +199,7 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
                 
                 <div 
                   className={`relative ${
-                    isFullscreen ? 'fixed inset-0 z-50 bg-app-gradient' : 'h-96 lg:h-[600px] bg-transparent'
+                    isFullscreen ? 'fixed inset-0 z-50 bg-app-gradient' : showSolvingInterface ? 'h-80 lg:h-96' : 'h-96 lg:h-[500px]'
                   }`}
                 >
                   <Canvas
@@ -257,75 +259,21 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
               </div>
             </div>
 
-            {/* Controls & Info */}
-            <div className={`space-y-6 ${showSolvingInterface ? 'lg:col-span-1' : ''}`}>
-              <div className="glass-panel p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Controls</h3>
-                <div className="text-sm text-white-80 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-orchid rounded-full"></div>
-                    <span>Click and drag to rotate</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-coral rounded-full"></div>
-                    <span>Scroll to zoom in/out</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-steel rounded-full"></div>
-                    <span>Double-click to reset view</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-panel p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Cube Statistics</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white-80">Total Squares:</span>
-                    <span className="font-mono text-white">54</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white-80">Faces Completed:</span>
-                    <span className="font-mono text-white">{Object.keys(faceColors).length}/6</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white-80">Validation:</span>
-                    <span className={`font-mono ${isValid ? 'text-orchid' : 'text-coral'}`}>
-                      {isValid ? 'Valid' : 'Check needed'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {!showSolvingInterface && (
-                <div className="glass-panel p-6">
+            {!showSolvingInterface && (
+              <div className="text-center mt-8">
+                <div className="glass-panel p-6 max-w-md mx-auto">
                   <h3 className="text-xl font-bold text-white mb-4">Ready to Solve!</h3>
-                  <div className="space-y-3">
-                    <div className="text-sm text-white-80">
-                      <p className="mb-2">Your cube is ready for solving. Choose your approach:</p>
-                      <ul className="space-y-1 ml-4">
-                        <li>• Beginner method with step-by-step guidance</li>
-                        <li>• Advanced Kociemba algorithm for optimal solutions</li>
-                      </ul>
-                    </div>
-                    <button
-                      onClick={handleStartSolving}
-                      className="btn-primary w-full py-3 flex items-center justify-center space-x-2"
-                    >
-                      <Play className="w-4 h-4" />
-                      <span>Start Learning to Solve</span>
-                    </button>
-                    <button
-                      onClick={() => window.location.reload()}
-                      className="btn-outline w-full py-2 flex items-center justify-center space-x-2"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Start Over</span>
-                    </button>
-                  </div>
+                  <p className="text-white-80 mb-6">Learn step-by-step how to solve your cube</p>
+                  <button
+                    onClick={handleStartSolving}
+                    className="btn-primary px-6 py-3 flex items-center justify-center space-x-2 mx-auto"
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>Start Learning to Solve</span>
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Learning Panel */}
             {showSolvingInterface && solution && (

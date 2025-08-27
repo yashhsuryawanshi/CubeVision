@@ -196,41 +196,26 @@ export default function LearningPanel({
           </div>
         </div>
 
-        {/* Current Move Display */}
-        <div className="bg-white-10 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-white-60 mb-1">Current Move</div>
-              <div className="text-3xl font-bold text-white font-mono">
-                {getCurrentMoveNotation() || 'Ready'}
-              </div>
+        {/* Current Move Display - Bigger and more prominent */}
+        <div className="bg-gradient-to-br from-orchid/20 to-coral/20 border border-orchid/30 rounded-xl p-6 mb-6">
+          <div className="text-center">
+            <div className="text-sm text-white-60 mb-2">Current Move</div>
+            <div className="text-5xl font-bold text-white font-mono mb-4 tracking-wider">
+              {getCurrentMoveNotation() || 'Ready'}
             </div>
             {getNextMove() && (
-              <div className="text-right">
-                <div className="text-sm text-white-60 mb-1">Next</div>
-                <div className="text-xl text-white-80 font-mono">{getNextMove()}</div>
+              <div>
+                <div className="text-sm text-white-60 mb-1">Up Next</div>
+                <div className="text-2xl text-white-80 font-mono">{getNextMove()}</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Step Explanation for Beginner Mode */}
-        {solverMethod === 'beginner' && currentStep?.explanation && (
-          <div className="bg-steel-20 rounded-lg p-4 mb-4">
-            <div className="flex items-start space-x-2">
-              <BookOpen className="w-5 h-5 text-steel mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-white mb-1">Learning Tip</div>
-                <p className="text-sm text-white-80">{currentStep.explanation}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Move Notation Display */}
-        <div className="bg-white-10 rounded-lg p-3">
-          <div className="text-sm text-white-60 mb-2">Full Step Notation</div>
-          <div className="font-mono text-white break-all">{currentStep?.notation || ''}</div>
+        {/* Compact Move Notation Display */}
+        <div className="bg-white-10 rounded-lg p-3 text-center">
+          <div className="text-sm text-white-60 mb-1">Step Algorithm</div>
+          <div className="font-mono text-white text-lg">{currentStep?.notation || ''}</div>
         </div>
       </div>
 
