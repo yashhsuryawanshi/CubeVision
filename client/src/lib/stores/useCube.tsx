@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { Solution } from "../solvers/Solver";
+import { Move } from "../cubeUtils";
 
 export interface CubeFace {
   front: string;
@@ -27,7 +29,17 @@ interface CubeState {
   faceColors: Partial<CubeColors>;
   
   // Overall cube state
-  cubeState: 'empty' | 'images_uploaded' | 'colors_detected' | 'ready_to_solve' | 'solved';
+  cubeState: 'empty' | 'images_uploaded' | 'colors_detected' | 'ready_to_solve' | 'solving' | 'solved';
+  
+  // Solving state
+  solution: Solution | null;
+  solverMethod: 'beginner' | 'kociemba';
+  currentStepIndex: number;
+  currentMoveIndex: number;
+  isPlaying: boolean;
+  isAnimating: boolean;
+  animationSpeed: number;
+  highlightLayer: string | null;
   
   // Saved cubes
   savedCubes: Array<{
@@ -46,6 +58,17 @@ interface CubeState {
   saveCube: (name?: string) => void;
   loadCube: (cubeId: string) => void;
   deleteSavedCube: (cubeId: string) => void;
+  
+  // Solving actions
+  setSolution: (solution: Solution) => void;
+  setSolverMethod: (method: 'beginner' | 'kociemba') => void;
+  setCurrentStep: (stepIndex: number) => void;
+  setCurrentMove: (moveIndex: number) => void;
+  setIsPlaying: (playing: boolean) => void;
+  setIsAnimating: (animating: boolean) => void;
+  setAnimationSpeed: (speed: number) => void;
+  setHighlightLayer: (layer: string | null) => void;
+  resetSolving: () => void;
 }
 
 export const useCube = create<CubeState>()(
@@ -55,6 +78,16 @@ export const useCube = create<CubeState>()(
       faceColors: {},
       cubeState: 'empty',
       savedCubes: [],
+      
+      // Solving state
+      solution: null,
+      solverMethod: 'beginner',
+      currentStepIndex: 0,
+      currentMoveIndex: 0,
+      isPlaying: false,
+      isAnimating: false,
+      animationSpeed: 1.0,
+      highlightLayer: null,
 
       setFaceImage: (face, imageData) => {
         set((state) => {
@@ -88,7 +121,13 @@ export const useCube = create<CubeState>()(
         set({
           faceImages: {},
           faceColors: {},
-          cubeState: 'empty'
+          cubeState: 'empty',
+          solution: null,
+          currentStepIndex: 0,
+          currentMoveIndex: 0,
+          isPlaying: false,
+          isAnimating: false,
+          highlightLayer: null
         });
       },
 
@@ -127,6 +166,50 @@ export const useCube = create<CubeState>()(
         set((state) => ({
           savedCubes: state.savedCubes.filter(c => c.id !== cubeId)
         }));
+      },
+
+      // Solving actions
+      setSolution: (solution) => {
+        set({ solution, cubeState: 'ready_to_solve' });
+      },
+
+      setSolverMethod: (method) => {
+        set({ solverMethod: method });
+      },
+
+      setCurrentStep: (stepIndex) => {
+        set({ currentStepIndex: stepIndex });
+      },
+
+      setCurrentMove: (moveIndex) => {
+        set({ currentMoveIndex: moveIndex });
+      },
+
+      setIsPlaying: (playing) => {
+        set({ isPlaying: playing });
+      },
+
+      setIsAnimating: (animating) => {
+        set({ isAnimating: animating });
+      },
+
+      setAnimationSpeed: (speed) => {
+        set({ animationSpeed: speed });
+      },
+
+      setHighlightLayer: (layer) => {
+        set({ highlightLayer: layer });
+      },
+
+      resetSolving: () => {
+        set({
+          solution: null,
+          currentStepIndex: 0,
+          currentMoveIndex: 0,
+          isPlaying: false,
+          isAnimating: false,
+          highlightLayer: null
+        });
       }
     }),
     {

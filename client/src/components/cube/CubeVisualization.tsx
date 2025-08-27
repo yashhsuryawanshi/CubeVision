@@ -1,84 +1,43 @@
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
-import { ArrowLeft, Maximize, RotateCcw } from "lucide-react";
+import { ArrowLeft, Maximize, RotateCcw, Play } from "lucide-react";
 import { useCube } from "../../lib/stores/useCube";
+import CubeAnimator from "./CubeAnimator";
+import LearningPanel from "./LearningPanel";
+import { getSolution } from "../../lib/solvers/Solver";
 import * as THREE from "three";
 
 interface CubeVisualizationProps {
   onBack: () => void;
 }
 
-// Component for individual cube face
-function CubeFace({ colors, position, rotation }: { colors: string[], position: [number, number, number], rotation: [number, number, number] }) {
-  const faceSize = 1;
-  const squareSize = faceSize / 3;
-  const offset = (faceSize - squareSize) / 2;
 
-  const getColorHex = (color: string) => {
-    const colorMap: Record<string, string> = {
-      'white': '#ffffff',
-      'yellow': '#ffff00',
-      'red': '#ff0000',
-      'orange': '#ff8000',
-      'green': '#00ff00',
-      'blue': '#0000ff',
-    };
-    return colorMap[color] || '#888888';
-  };
-
-  return (
-    <group position={position} rotation={rotation}>
-      {colors.map((color, index) => {
-        const row = Math.floor(index / 3);
-        const col = index % 3;
-        const x = (col - 1) * squareSize;
-        const y = (1 - row) * squareSize;
-        
-        return (
-          <mesh key={index} position={[x, y, 0.01]}>
-            <planeGeometry args={[squareSize * 0.95, squareSize * 0.95]} />
-            <meshLambertMaterial color={getColorHex(color)} />
-          </mesh>
-        );
-      })}
-      {/* Face border */}
-      <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[faceSize, faceSize]} />
-        <meshBasicMaterial color="#222222" />
-      </mesh>
-    </group>
-  );
-}
-
-// Main Rubik's Cube component
-function RubiksCube({ faceColors }: { faceColors: any }) {
-  const faces = [
-    { name: 'front', colors: faceColors.front || Array(9).fill('white'), position: [0, 0, 0.5], rotation: [0, 0, 0] },
-    { name: 'back', colors: faceColors.back || Array(9).fill('white'), position: [0, 0, -0.5], rotation: [0, Math.PI, 0] },
-    { name: 'right', colors: faceColors.right || Array(9).fill('white'), position: [0.5, 0, 0], rotation: [0, Math.PI / 2, 0] },
-    { name: 'left', colors: faceColors.left || Array(9).fill('white'), position: [-0.5, 0, 0], rotation: [0, -Math.PI / 2, 0] },
-    { name: 'top', colors: faceColors.top || Array(9).fill('white'), position: [0, 0.5, 0], rotation: [-Math.PI / 2, 0, 0] },
-    { name: 'bottom', colors: faceColors.bottom || Array(9).fill('white'), position: [0, -0.5, 0], rotation: [Math.PI / 2, 0, 0] },
-  ];
-
-  return (
-    <group>
-      {faces.map((face) => (
-        <CubeFace 
-          key={face.name}
-          colors={face.colors}
-          position={face.position as [number, number, number]}
-          rotation={face.rotation as [number, number, number]}
-        />
-      ))}
-    </group>
-  );
-}
 
 export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
-  const { faceColors } = useCube();
+  const { 
+    faceColors, 
+    solution, 
+    solverMethod, 
+    currentStepIndex, 
+    currentMoveIndex, 
+    isPlaying, 
+    isAnimating, 
+    animationSpeed,
+    highlightLayer,
+    setSolution, 
+    setSolverMethod, 
+    setCurrentStep, 
+    setCurrentMove, 
+    setIsPlaying, 
+    setIsAnimating, 
+    setAnimationSpeed,
+    setHighlightLayer,
+    resetSolving 
+  } = useCube();
+  
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSolvingInterface, setShowSolvingInterface] = useState(false);
 
   const validateCube = () => {
     const COLORS = ['white', 'yellow', 'red', 'orange', 'green', 'blue'];
@@ -103,6 +62,104 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
     setIsFullscreen(!isFullscreen);
   };
 
+  // Initialize solution when component mounts
+  useEffect(() => {
+    if (!solution && Object.keys(faceColors).length === 6) {
+      const newSolution = getSolution(faceColors as any, solverMethod);
+      if (newSolution) {
+        setSolution(newSolution);
+      }
+    }
+  }, [faceColors, solverMethod, solution, setSolution]);
+
+  // Auto-play logic
+  useEffect(() => {
+    if (!isPlaying || !solution || isAnimating) return;
+
+    const timer = setTimeout(() => {
+      handleNextMove();
+    }, 1000 / animationSpeed);
+
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentStepIndex, currentMoveIndex, animationSpeed, isAnimating, solution]);
+
+  const getCurrentMove = () => {
+    if (!solution) return null;
+    const currentStep = solution.steps[currentStepIndex];
+    if (!currentStep || currentMoveIndex >= currentStep.moves.length) return null;
+    return currentStep.moves[currentMoveIndex];
+  };
+
+  const handleStartSolving = () => {
+    setShowSolvingInterface(true);
+    if (!solution) {
+      const newSolution = getSolution(faceColors as any, solverMethod);
+      if (newSolution) {
+        setSolution(newSolution);
+      }
+    }
+  };
+
+  const handleMethodChange = (method: 'beginner' | 'kociemba') => {
+    setSolverMethod(method);
+    resetSolving();
+    const newSolution = getSolution(faceColors as any, method);
+    if (newSolution) {
+      setSolution(newSolution);
+    }
+  };
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleNextMove = () => {
+    if (!solution) return;
+    
+    const currentStep = solution.steps[currentStepIndex];
+    if (!currentStep) return;
+
+    if (currentMoveIndex < currentStep.moves.length - 1) {
+      setCurrentMove(currentMoveIndex + 1);
+    } else if (currentStepIndex < solution.steps.length - 1) {
+      setCurrentStep(currentStepIndex + 1);
+      setCurrentMove(0);
+    } else {
+      setIsPlaying(false); // End of solution
+    }
+  };
+
+  const handleAnimationComplete = () => {
+    setIsAnimating(false);
+    setHighlightLayer(null);
+  };
+
+  const handleStepChange = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+    setIsPlaying(false);
+  };
+
+  const handleMoveChange = (moveIndex: number) => {
+    setCurrentMove(moveIndex);
+    setIsPlaying(false);
+  };
+
+  const handleReset = () => {
+    setCurrentStep(0);
+    setCurrentMove(0);
+    setIsPlaying(false);
+    setIsAnimating(false);
+    setHighlightLayer(null);
+  };
+
+  const handleSpeedChange = (speed: number) => {
+    setAnimationSpeed(speed);
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Hero Overlay */}
@@ -120,9 +177,9 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-4 gap-8">
+          <div className={`grid gap-8 ${showSolvingInterface ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
             {/* 3D Viewer */}
-            <div className="lg:col-span-3">
+            <div className={showSolvingInterface ? 'lg:col-span-3' : 'lg:col-span-3'}>
               <div className="glass-panel overflow-hidden">
                 <div className="p-6 pb-4">
                   <div className="flex items-center justify-between">
@@ -157,7 +214,14 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
                     />
                     
                     <Suspense fallback={null}>
-                      <RubiksCube faceColors={faceColors} />
+                      <CubeAnimator 
+                        faceColors={faceColors}
+                        currentMove={getCurrentMove()}
+                        isAnimating={isAnimating}
+                        animationSpeed={animationSpeed}
+                        onAnimationComplete={handleAnimationComplete}
+                        highlightLayer={highlightLayer}
+                      />
                       <ContactShadows
                         position={[0, -2, 0]}
                         opacity={0.4}
@@ -194,7 +258,7 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
             </div>
 
             {/* Controls & Info */}
-            <div className="space-y-6">
+            <div className={`space-y-6 ${showSolvingInterface ? 'lg:col-span-1' : ''}`}>
               <div className="glass-panel p-6">
                 <h3 className="text-xl font-bold text-white mb-4">Controls</h3>
                 <div className="text-sm text-white-80 space-y-2">
@@ -233,27 +297,56 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
                 </div>
               </div>
 
-              <div className="glass-panel p-6">
-                <h3 className="text-xl font-bold text-white mb-4">Next Steps</h3>
-                <div className="space-y-3">
-                  <div className="text-sm text-white-80">
-                    <p className="mb-2">Your cube visualization is complete! You can:</p>
-                    <ul className="space-y-1 ml-4">
-                      <li>• Explore different angles</li>
-                      <li>• Study the color patterns</li>
-                      <li>• Use this for learning algorithms</li>
-                    </ul>
+              {!showSolvingInterface && (
+                <div className="glass-panel p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Ready to Solve!</h3>
+                  <div className="space-y-3">
+                    <div className="text-sm text-white-80">
+                      <p className="mb-2">Your cube is ready for solving. Choose your approach:</p>
+                      <ul className="space-y-1 ml-4">
+                        <li>• Beginner method with step-by-step guidance</li>
+                        <li>• Advanced Kociemba algorithm for optimal solutions</li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={handleStartSolving}
+                      className="btn-primary w-full py-3 flex items-center justify-center space-x-2"
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>Start Learning to Solve</span>
+                    </button>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="btn-outline w-full py-2 flex items-center justify-center space-x-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Start Over</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="btn-outline w-full py-2 flex items-center justify-center space-x-2"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Start Over</span>
-                  </button>
                 </div>
-              </div>
+              )}
             </div>
+
+            {/* Learning Panel */}
+            {showSolvingInterface && solution && (
+              <div className="lg:col-span-1">
+                <LearningPanel
+                  solution={solution}
+                  currentStepIndex={currentStepIndex}
+                  currentMoveIndex={currentMoveIndex}
+                  isPlaying={isPlaying}
+                  animationSpeed={animationSpeed}
+                  solverMethod={solverMethod}
+                  onStepChange={handleStepChange}
+                  onMoveChange={handleMoveChange}
+                  onPlay={handlePlay}
+                  onPause={handlePause}
+                  onReset={handleReset}
+                  onSpeedChange={handleSpeedChange}
+                  onMethodChange={handleMethodChange}
+                />
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
@@ -263,12 +356,22 @@ export default function CubeVisualization({ onBack }: CubeVisualizationProps) {
               <span>Back to Detection</span>
             </button>
             
-            <button 
-              onClick={() => window.open('/learning', '_blank')}
-              className="btn-primary px-6 py-3 flex items-center space-x-2"
-            >
-              <span>Learn to Solve</span>
-            </button>
+            {showSolvingInterface ? (
+              <button 
+                onClick={() => setShowSolvingInterface(false)}
+                className="btn-outline px-6 py-3 flex items-center space-x-2"
+              >
+                <span>Hide Solver</span>
+              </button>
+            ) : (
+              <button 
+                onClick={handleStartSolving}
+                className="btn-primary px-6 py-3 flex items-center space-x-2"
+              >
+                <Play className="w-5 h-5" />
+                <span>Learn to Solve</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

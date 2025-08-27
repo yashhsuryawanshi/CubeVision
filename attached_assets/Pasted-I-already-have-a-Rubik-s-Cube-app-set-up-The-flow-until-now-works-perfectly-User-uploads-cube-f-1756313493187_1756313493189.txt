@@ -1,0 +1,49 @@
+I already have a Rubik’s Cube app set up. The flow until now works perfectly:
+- User uploads cube face pictures.
+- The Roboflow model (https://universe.roboflow.com/dhyan-thacker/rubiks-cube-colors/model/1) detects sticker colors.
+- The cube is reconstructed and displayed as a 3D model.
+
+✅ Do not change or break any of the existing logic. Everything up to the 3D model is working fine. Just continue from there.
+
+Now I want to add the **solving and learning functionality**:
+
+1. **Two Solving Options**:
+   - Beginner "Layer-by-Layer" method (teaching-focused).
+   - Advanced "Kociemba Two-Phase Algorithm" (short solutions).
+
+   Add a toggle so the user can select which method to use.
+
+2. **Step-by-Step Learning Interface**:
+   - Must integrate with the current 3D cube model.
+   - Display the current step name (e.g., "Solve White Cross").
+   - Show the move notation (`R`, `U'`, `F2`) for each step.
+   - Provide play, pause, next, and previous controls.
+   - Show progress (Step X of Y).
+   - Keep styling consistent with the current theme.
+
+3. **3D Cube Animation**:
+   - Animate cube layer rotations smoothly (like a real cube).
+   - Highlight which layer will move before animating it.
+   - Keep cube state in sync with moves.
+   - Allow speed adjustment for animations.
+
+4. **Extra Features for Learning**:
+   - Beginner mode should also show text-based explanations (e.g., “Insert the white corner using R' D' R D”).
+   - Advanced mode skips explanations and just shows moves + animations.
+   - Option to restart the solution or skip to a specific step.
+
+5. **Technical Continuation**:
+   - Keep using React + Three.js (React Three Fiber) + Tailwind (matching current theme).
+   - Do not replace or rework the color detection flow — just build on top of it.
+   - Keep a clean modular structure (extend with new components):
+     - `Solver.ts` → generate move sequences (Beginner + Kociemba).
+     - `LearningPanel.tsx` → UI for step instructions, controls, progress.
+     - `CubeAnimator.tsx` → animate moves on the existing 3D model.
+   - Integrate these with the current cube rendering and detection pipeline.
+
+6. **Deliverable**:
+   - After the cube is reconstructed, user can choose solver type.
+   - Step-by-step solving begins, with smooth animations and explanations.
+   - Everything must feel like a natural continuation of the current app, without disturbing the flow that already works.
+
+🚀 Implement this continuation inside my existing Replit project without altering the working parts (upload → Roboflow detection → 3D cube display). Just add the solving + learning layer exactly as described.
